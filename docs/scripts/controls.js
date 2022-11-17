@@ -26,9 +26,17 @@ function dashboard_step() {
             await GhContext.checkTeams();
             await GhContext.checkRepositories();
             await GhContext.checkPullRequests();
+            setTimeout(refreshPullRequest, 1000 * 60 * 10)
         }
     }, 500);
     return false;
+}
+
+async function refreshPullRequest() {
+    if (GhContext.isConnected()) {
+        await GhContext.checkPullRequests();
+        setTimeout(refreshPullRequest, 1000 * 60 * 10)
+    }
 }
 
 window.document.addEventListener("status_message",

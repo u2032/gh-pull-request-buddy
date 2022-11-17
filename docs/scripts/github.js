@@ -107,7 +107,7 @@ const GhContext = {
         }
         this.pull_requests = updatedPullRequests;
         window.document.dispatchEvent(new CustomEvent('gh_pull_requests', {detail: {pull_requests: this.pull_requests}}));
-        dispatchStatusMessage("Last update: " + (new Date()).toISOString());
+        dispatchStatusMessage("Last update: " + (new Date()).toLocaleString());
     }
 }
 
