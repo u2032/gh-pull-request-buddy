@@ -17,10 +17,10 @@
 <body class="w3-black" onload="loading_step()">
 
 <header class="w3-bar w3-teal">
-    <div class="w3-bar-item w3-right">&nbsp;</div>
     <div id="header-user" class="w3-bar-item w3-hide">
         <span id="user-name"></span> (@<span id="user-login"></span>)
     </div>
+    <div id="status-message" class="w3-bar-item w3-right w3-small italic">&nbsp;</div>
 </header>
 
 <main class="w3-margin w3-padding-large">
@@ -41,8 +41,22 @@
     </div>
 
     <div id="dashboard" class="w3-hide">
-        <div class="w3-center w3-animate-fading">
+        <div id="dashboard-loading" class="w3-center w3-animate-fading">
             <h1>... LOADING ...</h1>
+        </div>
+
+        <div id="pull-request-template" class="w3-card-4 w3-white w3-container w3-padding w3-section w3-hide">
+            <div class="w3-row-padding">
+                <div class="w3-col m12 l12">
+                    <div>
+                        <span id="pull-request-title" class="w3-large bold">This is a title</span>
+                        <span id="pull-request-number" class="w3-large w3-text-dark-gray">#1234</span>
+                    </div>
+                    <div>
+                        <span id="pull-request-repo">org/repo-name</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </main>

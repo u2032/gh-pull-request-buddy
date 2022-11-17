@@ -21,8 +21,20 @@ function dashboard_step() {
     })
     document.getElementById("dashboard").classList.remove("w3-hide");
     document.getElementById("header-user").classList.remove("w3-hide");
+    setTimeout(async function () {
+        if (GhContext.isConnected()) {
+            await GhContext.checkTeams();
+            await GhContext.checkRepositories();
+            await GhContext.checkPullRequests();
+        }
+    }, 500);
     return false;
 }
+
+window.document.addEventListener("status_message",
+    (e) => {
+        document.getElementById("status-message").innerText = e.detail.message;
+    }, false);
 
 window.document.addEventListener("gh_connection",
     (e) => {
@@ -35,3 +47,44 @@ window.document.addEventListener("gh_connection",
             document.getElementById("connection-error").classList.remove("w3-hide");
         }
     }, false);
+
+
+window.document.addEventListener("gh_pull_request",
+    (e) => {
+        const pr = e.detail.pull_request;
+
+        // Disable loading as soon as we receive a first pull request
+        document.getElementById("dashboard-loading").classList.add("w3-hide");
+
+        // Display the pull request
+        const template = document.getElementById("pull-request-template");
+
+        const instance = template.cloneNode(true);
+        instance.id = "pull-request-" + pr.id;
+        instance.classList.remove("w3-hide");
+
+        const prTitle = instance.querySelector("#pull-request-title");
+        prTitle.id = "pull-request-title-" + pr.id;
+        prTitle.innerText = pr.title;
+
+        const prNumber = instance.querySelector("#pull-request-number");
+        prNumber.id = "pull-request-number-" + pr.id;
+        prNumber.innerText = "#" + pr.number;
+
+        const prRepo = instance.querySelector("#pull-request-repo");
+        prRepo.id = "pull-request-repo-" + pr.id;
+        prRepo.innerText = pr.repository.full_name;
+
+        // Remove the existing instance with the same ID
+        const previous = document.getElementById("pull-request-" + pr.id);
+        if (previous !== null) {
+            previous.remove();
+        }
+
+        // Add the instance to the parent
+        if (pr.closed_at === null && pr.merged_at === null) {
+            const parent = document.getElementById("dashboard");
+            parent.appendChild(instance);
+        }
+    }, false);
+
