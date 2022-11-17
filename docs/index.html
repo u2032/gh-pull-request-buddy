@@ -4,28 +4,46 @@
     <title>Github PR Dashboard</title>
 
     <meta http-equiv='Content-Security-Policy'
-          CONTENT="default-src 'self'; script-src 'self' 'unsafe-inline' u2032.github.io; style-src 'self' 'unsafe-inline' u2032.github.io; img-src 'self' *; media-src 'self'; frame-src u2032.github.io;">
+          CONTENT="default-src 'self'; script-src 'self' 'unsafe-inline' u2032.github.io; style-src 'self' 'unsafe-inline' u2032.github.io fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' *; connect-src 'self' api.github.com">
 
     <link rel="stylesheet" href="./styles/main.css">
     <link rel="stylesheet" href="./styles/w3.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
 
     <script type="text/javascript" src="./scripts/controls.js"></script>
     <script type="text/javascript" src="./scripts/github.js"></script>
 </head>
 
-<body onload="loading_step()">
+<body class="w3-black" onload="loading_step()">
 
-<header>
-
+<header class="w3-bar w3-teal">
+    <div class="w3-bar-item w3-right">&nbsp;</div>
+    <div id="header-user" class="w3-bar-item w3-hide">
+        <span id="user-name"></span> (@<span id="user-login"></span>)
+    </div>
 </header>
 
-<main>
+<main class="w3-margin w3-padding-large">
     <div id="loading" class="w3-center w3-animate-fading">
-        ... LOADING ...
+        <h1>... LOADING ...</h1>
     </div>
 
     <div id="connection" class="w3-hide">
-        Enter your credentials // WIP
+        <form class="w3-card-4 w3-white w3-padding-large w3-round-large" onsubmit="return connection_step();">
+            <label class="w3-margin w3-large">Enter your Github Token:</label>
+            <input id="gh-token" type="password" class="w3-input w3-border"/>
+            <button class="w3-btn w3-blue w3-margin" onclick="return connection_step();">CONNECT</button>
+        </form>
+        <div id="connection-error" class="w3-panel w3-yellow w3-hide">
+            <h3>Warning!</h3>
+            <p>Unable to connect to Github API. Is your Github Token correct?</p>
+        </div>
+    </div>
+
+    <div id="dashboard" class="w3-hide">
+        <div class="w3-center w3-animate-fading">
+            <h1>... LOADING ...</h1>
+        </div>
     </div>
 </main>
 
