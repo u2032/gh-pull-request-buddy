@@ -1,11 +1,37 @@
 <html>
 
 <head>
+    <title>Github PR Dashboard</title>
 
+    <meta http-equiv='Content-Security-Policy'
+          CONTENT="default-src 'self'; script-src 'self' 'unsafe-inline' u2032.github.io; style-src 'self' 'unsafe-inline' u2032.github.io; img-src 'self' *; media-src 'self'; frame-src u2032.github.io;">
+
+    <link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="./styles/w3.css">
+
+    <script type="text/javascript" src="./scripts/controls.js"></script>
+    <script type="text/javascript" src="./scripts/github.js"></script>
 </head>
 
-<body>
-Hello world!
-</body>
+<body onload="loading_step()">
 
+<header>
+
+</header>
+
+<main>
+    <div id="loading" class="w3-center w3-animate-fading">
+        ... LOADING ...
+    </div>
+
+    <div id="connection" class="w3-hide">
+        Enter your credentials // WIP
+    </div>
+</main>
+
+<footer>
+
+</footer>
+
+</body>
 </html>
