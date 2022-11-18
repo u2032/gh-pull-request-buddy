@@ -9,6 +9,7 @@ function init() {
             pulls.forEach( (el) => {
                 filterPullRequest(el);
             })
+            checkNoPullRequest();
         });
     }
 }
@@ -76,6 +77,17 @@ function filterPullRequest( _el ) {
         _el.classList.add("w3-hide");
     }
 }
+
+function checkNoPullRequest() {
+    const noPr = document.getElementById("no-pull-request");
+    const visibleElements = document.querySelectorAll("div.pull-request-instance:not(.w3-hide)");
+    if (visibleElements.length > 0) {
+        noPr.classList.add("w3-hide");
+    } else {
+        noPr.classList.remove("w3-hide");
+    }
+}
+
 
 /* EVENT LISTENERS */
 
@@ -190,6 +202,7 @@ window.document.addEventListener("gh_owners",
                 pulls.forEach( (el) => {
                     filterPullRequest(el);
                 })
+                checkNoPullRequest();
             });
 
             const ownerChekbox = instance.querySelector("#owner-checkbox");
@@ -220,5 +233,6 @@ window.document.addEventListener("gh_pull_requests_refreshed",
                 el.remove();
             }
         });
+        checkNoPullRequest();
 
     }, false);

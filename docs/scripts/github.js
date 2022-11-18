@@ -180,6 +180,7 @@ const GhContext = {
             for (const prdata of this.pull_requests) {
                 window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata, last_check: this.lastCheck}}));
             }
+            window.document.dispatchEvent(new CustomEvent('gh_pull_requests_refreshed', {detail: {last_check: this.lastCheck}}));
 
             await dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString());
 
