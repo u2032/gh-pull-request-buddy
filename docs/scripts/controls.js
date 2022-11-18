@@ -24,6 +24,7 @@ function dashboard_step() {
     setTimeout(async function () {
         await GhContext.checkTeams();
         await refreshPullRequest();
+        document.getElementById("dashboard-loading").classList.add("w3-hide");
     }, 500);
     return false;
 }
@@ -34,7 +35,7 @@ async function refreshPullRequest() {
         await GhContext.checkPullRequests();
     } catch (_ignored) {
     }
-    setTimeout(refreshPullRequest, 1000 * 60 * 10)
+    setTimeout(refreshPullRequest, 1000 * 60 * 10) // refresh every 10 min
 }
 
 window.document.addEventListener("status_message",
@@ -58,6 +59,7 @@ window.document.addEventListener("gh_connection",
 window.document.addEventListener("gh_pull_request",
     (e) => {
         const pr = e.detail.pull_request;
+        const lastCheck = e.detail.last_check;
 
         // Disable loading as soon as we receive a first pull request
         document.getElementById("dashboard-loading").classList.add("w3-hide");
@@ -70,6 +72,7 @@ window.document.addEventListener("gh_pull_request",
         instance.classList.remove("w3-hide");
         instance.classList.add("pull-request-owner-" + pr.repository.owner.login);
         instance.setAttribute("data-created", new Date(pr.created_at).getTime())
+        instance.setAttribute("data-last-check", lastCheck.getTime())
 
         const prTitle = instance.querySelector("#pull-request-title");
         prTitle.id = "pull-request-title-" + pr.id;
@@ -157,3 +160,18 @@ window.document.addEventListener("gh_owners",
 
     }, false);
 
+window.document.addEventListener("gh_pull_requests_refreshed",
+    (e) => {
+        const lastCheck = e.detail.last_check;
+
+        // Remove all pull requests which were not been updated (probably merged or closed)
+        const parent = document.getElementById("dashboard");
+        const pulls = parent.querySelectorAll(".pull-request-instance");
+        pulls.forEach( el => {
+            const elLastCheck = new Date(parseInt(el.getAttribute("data-last-check")));
+            if (elLastCheck < lastCheck) {
+                el.remove();
+            }
+        });
+
+    }, false);

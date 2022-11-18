@@ -120,7 +120,7 @@ const GhContext = {
                         if (reviewer.id === this.user.id) {
                             const prdata = { id: pr.id, number: pr.number, title: pr.title, html_url: pr.html_url, state: pr.state, created_at: pr.created_at, closed_at: pr.closed_at, merged_at: pr.merged_at, repository: repository };
                             updatedPullRequests.push( prdata )
-                            window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata}}));
+                            window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata, last_check: now}}));
                             continue prloop;
                         }
                     }
@@ -128,7 +128,7 @@ const GhContext = {
                         if (this.team_ids.includes(team.id)) {
                             const prdata = { id: pr.id, number: pr.number, title: pr.title, html_url: pr.html_url, state: pr.state, created_at: pr.created_at, closed_at: pr.closed_at, merged_at: pr.merged_at, repository: repository };
                             updatedPullRequests.push( prdata )
-                            window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata}}));
+                            window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata, last_check: now}}));
                             continue prloop;
                         }
                     }
@@ -137,8 +137,8 @@ const GhContext = {
         }
         this.pull_requests = updatedPullRequests;
         this.lastCheck = now;
-        window.document.dispatchEvent(new CustomEvent('gh_pull_requests', {detail: {pull_requests: this.pull_requests}}));
         dispatchStatusMessage("Last update: " + (new Date()).toLocaleString());
+        window.document.dispatchEvent(new CustomEvent('gh_pull_requests_refreshed', {detail: {pull_requests: this.pull_requests, last_check: now}}));
     }
 }
 
