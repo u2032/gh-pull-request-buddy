@@ -16,7 +16,6 @@ const GhContext = {
     pull_requests: [], // { id, number, title, state, html_url, created_at, closed_at, merged_at, repository }
 
     owners: [],
-    filtered_owners : [],
 
     connect: async function (_token) {
         this.user.id = null;

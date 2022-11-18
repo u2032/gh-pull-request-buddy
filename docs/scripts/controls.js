@@ -32,7 +32,8 @@ async function refreshPullRequest() {
     try {
         await GhContext.checkRepositories();
         await GhContext.checkPullRequests();
-    } catch (_ignored) {}
+    } catch (_ignored) {
+    }
     setTimeout(refreshPullRequest, 1000 * 60 * 10)
 }
 
@@ -67,6 +68,7 @@ window.document.addEventListener("gh_pull_request",
         const instance = template.cloneNode(true);
         instance.id = "pull-request-" + pr.id;
         instance.classList.remove("w3-hide");
+        instance.classList.add("pull-request-owner-" + pr.repository.owner.login);
         instance.setAttribute("data-created", new Date(pr.created_at).getTime())
 
         const prTitle = instance.querySelector("#pull-request-title");
@@ -98,7 +100,6 @@ window.document.addEventListener("gh_pull_request",
 
             // Sort by creation date
             let allInstances = Array.from(parent.querySelectorAll(".pull-request-instance"));
-            console.log("all instances: " + JSON.stringify(allInstances))
             allInstances.sort((a, b) => {
                 let createdA = parseInt(a.getAttribute("data-created"));
                 let createdB = parseInt(b.getAttribute("data-created"));
@@ -107,6 +108,51 @@ window.document.addEventListener("gh_pull_request",
             allInstances.forEach(function (node) {
                 node.parentNode.append(node);
             });
+        }
+
+    }, false);
+
+window.document.addEventListener("gh_owners",
+    (e) => {
+        const owners = e.detail.owners;
+
+        // Display the pull request
+        const template = document.getElementById("owner-template");
+
+        for (const owner of owners) {
+            const previous = document.getElementById("owner-" + owner);
+            if (previous !== null) {
+                // If this owner already exists, do nothing
+                continue;
+            }
+
+            const instance = template.cloneNode(true);
+            instance.id = "owner-" + owner;
+            instance.classList.remove("w3-hide");
+            instance.addEventListener('change', e => {
+                const pulls = document.querySelectorAll(".pull-request-owner-" + owner);
+                if (e.target.checked) {
+                    pulls.forEach( (el) => {
+                        el.classList.remove("w3-hide");
+                    })
+                } else {
+                    pulls.forEach( (el) => {
+                        el.classList.add("w3-hide");
+                    })
+                }
+            });
+
+            const ownerChekbox = instance.querySelector("#owner-checkbox");
+            ownerChekbox.id = "owner-checkbox-" + owner;
+
+            const ownerLabel = instance.querySelector("#owner-label");
+            ownerLabel.id = "owner-label-" + owner;
+            ownerLabel.setAttribute("for", "owner-checkbox-" + owner);
+            ownerLabel.innerText = "@" + owner;
+
+            // Add the instance to the parent
+            const parent = document.getElementById("owner-list");
+            parent.appendChild(instance);
         }
 
     }, false);
