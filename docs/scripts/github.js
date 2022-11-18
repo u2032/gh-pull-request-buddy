@@ -1,5 +1,7 @@
 const GhContext = {
 
+    version: "1",
+
     lastCheck: null,
 
     user: {
@@ -44,6 +46,7 @@ const GhContext = {
         dispatchStatusMessage("Retrieving user's teams...");
         const teams = await ghGET(this.user.token, "/user/teams?per_page=100");
         if (false !== teams) {
+            this.team_ids = [];
             teams.forEach((t) => {
                 this.team_ids.push(t.id)
             })
@@ -137,8 +140,46 @@ const GhContext = {
         }
         this.pull_requests = updatedPullRequests;
         this.lastCheck = now;
-        dispatchStatusMessage("Last update: " + (new Date()).toLocaleString());
+        dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString());
         window.document.dispatchEvent(new CustomEvent('gh_pull_requests_refreshed', {detail: {pull_requests: this.pull_requests, last_check: now}}));
+    },
+
+    storeInLocalStorage : async function () {
+        // The user informaiton is not store in the storage
+        localStorage.setItem('gh_context_version', this.version );
+        localStorage.setItem('gh_context_last_check', this.lastCheck.getTime() );
+        localStorage.setItem('gh_context_team_ids', JSON.stringify(this.team_ids) );
+        localStorage.setItem('gh_context_owners', JSON.stringify(this.owners) );
+        localStorage.setItem('gh_context_repositories', JSON.stringify(this.repositories) );
+        localStorage.setItem('gh_context_pull_requests', JSON.stringify(this.pull_requests) );
+    },
+
+    reloadFromLocalStorage : async function () {
+        try {
+            let version = localStorage.getItem('gh_context_version');
+            if (version !== this.version) {
+                console.info("Version of the GhContext has changed, not reloading the existing one");
+                localStorage.clear();
+                return;
+            }
+            this.lastCheck = new Date(parseInt(localStorage.getItem('gh_context_last_check')));
+            this.team_ids = JSON.parse(localStorage.getItem('gh_context_team_ids') ?? "[]");
+            this.owners = JSON.parse(localStorage.getItem('gh_context_owners') ?? "[]");
+            this.repositories = JSON.parse(localStorage.getItem('gh_context_repositories') ?? {});
+            this.pull_requests = JSON.parse(localStorage.getItem('gh_context_pull_requests') ?? {});
+
+            // Retrigger events to update the view
+            window.document.dispatchEvent(new CustomEvent('gh_owners', {detail: {owners: this.owners}}));
+            for (const prdata of this.pull_requests) {
+                window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata, last_check: this.lastCheck}}));
+            }
+
+            await dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString());
+
+        } catch (_e) {
+            console.error("Failed to reload from storage: " + _e);
+            localStorage.clear();
+        }
     }
 }
 

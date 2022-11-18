@@ -22,6 +22,7 @@ function dashboard_step() {
     document.getElementById("dashboard").classList.remove("w3-hide");
     document.getElementById("header-user").classList.remove("w3-hide");
     setTimeout(async function () {
+        await GhContext.reloadFromLocalStorage();
         await GhContext.checkTeams();
         await refreshPullRequest();
         document.getElementById("dashboard-loading").classList.add("w3-hide");
@@ -33,6 +34,7 @@ async function refreshPullRequest() {
     try {
         await GhContext.checkRepositories();
         await GhContext.checkPullRequests();
+        await GhContext.storeInLocalStorage();
     } catch (_ignored) {
     }
     setTimeout(refreshPullRequest, 1000 * 60 * 10) // refresh every 10 min
