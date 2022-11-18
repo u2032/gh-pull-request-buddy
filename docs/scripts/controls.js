@@ -169,13 +169,15 @@ window.document.addEventListener("gh_owners",
         // Display the pull request
         const template = document.getElementById("owner-template");
 
-        for (const owner of owners) {
-            const previous = document.getElementById("owner-" + owner);
-            if (previous !== null) {
-                // If this owner already exists, do nothing
-                continue;
+        const pulls = document.querySelectorAll(".owner-instance");
+        pulls.forEach( (el) => {
+            // Remove previous owners
+            if (el !== template) {
+                el.remove();
             }
+        })
 
+        for (const owner of owners) {
             const instance = template.cloneNode(true);
             instance.id = "owner-" + owner;
             instance.classList.remove("w3-hide");

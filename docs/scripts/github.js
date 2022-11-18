@@ -67,7 +67,7 @@ const GhContext = {
                     repositories.forEach((o) => {
                         if (o.archived === false && o.disabled === false) {
                             newRepositories.push({id: o.id, full_name: o.full_name, pushed_at: o.pushed_at, owner: { id: o.owner.id, login: o.owner.login } });
-                            if (!newOwners.includes(o.owner.login)) {
+                            if (!newOwners.includes(o.owner.login) && o.owner.type !== 'User') {
                                 newOwners.push(o.owner.login);
                             }
                         }
