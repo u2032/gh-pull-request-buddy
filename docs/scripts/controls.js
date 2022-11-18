@@ -34,6 +34,7 @@ function dashboard_step() {
 
 async function refreshPullRequest() {
     if (GhContext.isConnected()) {
+        await GhContext.checkRepositories();
         await GhContext.checkPullRequests();
         setTimeout(refreshPullRequest, 1000 * 60 * 10)
     }
