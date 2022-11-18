@@ -22,22 +22,18 @@ function dashboard_step() {
     document.getElementById("dashboard").classList.remove("w3-hide");
     document.getElementById("header-user").classList.remove("w3-hide");
     setTimeout(async function () {
-        if (GhContext.isConnected()) {
-            await GhContext.checkTeams();
-            await GhContext.checkRepositories();
-            await GhContext.checkPullRequests();
-            setTimeout(refreshPullRequest, 1000 * 60 * 10)
-        }
+        await GhContext.checkTeams();
+        await refreshPullRequest();
     }, 500);
     return false;
 }
 
 async function refreshPullRequest() {
-    if (GhContext.isConnected()) {
+    try {
         await GhContext.checkRepositories();
         await GhContext.checkPullRequests();
-        setTimeout(refreshPullRequest, 1000 * 60 * 10)
-    }
+    } catch (_ignored) {}
+    setTimeout(refreshPullRequest, 1000 * 60 * 10)
 }
 
 window.document.addEventListener("status_message",
@@ -71,6 +67,7 @@ window.document.addEventListener("gh_pull_request",
         const instance = template.cloneNode(true);
         instance.id = "pull-request-" + pr.id;
         instance.classList.remove("w3-hide");
+        instance.setAttribute("data-created", new Date(pr.created_at).getTime())
 
         const prTitle = instance.querySelector("#pull-request-title");
         prTitle.id = "pull-request-title-" + pr.id;
@@ -84,6 +81,10 @@ window.document.addEventListener("gh_pull_request",
         prRepo.id = "pull-request-repo-" + pr.id;
         prRepo.innerText = pr.repository.full_name;
 
+        const prCreatedAt = instance.querySelector("#pull-request-created-at");
+        prCreatedAt.id = "pull-request-created-at-" + pr.id;
+        prCreatedAt.innerText = new Date(pr.created_at).toLocaleString();
+
         // Remove the existing instance with the same ID
         const previous = document.getElementById("pull-request-" + pr.id);
         if (previous !== null) {
@@ -94,6 +95,19 @@ window.document.addEventListener("gh_pull_request",
         if (pr.closed_at === null && pr.merged_at === null) {
             const parent = document.getElementById("dashboard");
             parent.appendChild(instance);
+
+            // Sort by creation date
+            let allInstances = Array.from(parent.querySelectorAll(".pull-request-instance"));
+            console.log("all instances: " + JSON.stringify(allInstances))
+            allInstances.sort((a, b) => {
+                let createdA = parseInt(a.getAttribute("data-created"));
+                let createdB = parseInt(b.getAttribute("data-created"));
+                return createdB - createdA;
+            });
+            allInstances.forEach(function (node) {
+                node.parentNode.append(node);
+            });
         }
+
     }, false);
 
