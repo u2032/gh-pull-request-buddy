@@ -10,6 +10,6 @@ body, h1, h2, h3, h4, h5, h6 {
     font-weight: bold;
 }
 
-#dashboard-loading {
-    height: 200px;
+.pointable {
+    cursor: pointer;
 }

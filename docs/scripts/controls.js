@@ -121,6 +121,10 @@ window.document.addEventListener("gh_pull_request",
         instance.setAttribute("data-owner", owner)
         instance.setAttribute("data-matching", matching)
 
+        instance.addEventListener("click", function () {
+            window.open(pr.html_url,'_blank');
+        });
+
         const prTitle = instance.querySelector("#pull-request-title");
         prTitle.id = "pull-request-title-" + pr.id;
         prTitle.innerText = pr.title;
