@@ -19,6 +19,27 @@ const GhContext = {
 
     owners: [],
 
+    filters: [],
+
+    toggleFilter: async function(_type, _value) {
+        let active = this.filters[_type + "-" + _value];
+        if (active === undefined) {
+            active = this.filters[_type + "-" + _value] = false;
+        } else {
+            active = this.filters[_type + "-" + _value] = !this.filters[_type + "-" + _value];
+        }
+        console.debug("Toggling filter: " + _type + "-" + _value + " => " + active);
+        window.document.dispatchEvent(new CustomEvent('gh_filter_toggle', {detail: {type: _type, value: _value, active: active}}));
+    },
+
+    isFilterActive: function(_type, _value) {
+        const filtered = this.filters[_type + "-" + _value];
+        if (filtered === undefined) {
+            return true;
+        }
+        return this.filters[_type + "-" + _value];
+    },
+
     connect: async function (_token) {
         this.user.id = null;
         this.user.login = null;

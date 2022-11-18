@@ -1,17 +1,19 @@
 const steps = ["loading", "connection", "dashboard"];
-const matchings = ["direct", "team"];
+const filterTypes = ["matching", "owner"]
+
+/* Configuration  */
 
 function init() {
-    for (const matching of matchings) {
-        const el = document.getElementById("matching-checkbox-" + matching);
-        el.addEventListener('change', e => {
-            const pulls = document.querySelectorAll("div[data-matching='" + matching + "']");
-            pulls.forEach( (el) => {
-                filterPullRequest(el);
-            })
-            checkNoPullRequest();
-        });
+    const filters = document.querySelectorAll("button[data-filter]");
+    for (const filter of filters) {
+        filter.addEventListener('click', onClickFilter);
     }
+}
+
+function onClickFilter(e) {
+    const type = e.target.getAttribute("data-filter");
+    const value = e.target.getAttribute("data-filter-value");
+    GhContext.toggleFilter(type, value);
 }
 
 /* VIEW MANAGEMENT */
@@ -58,24 +60,32 @@ async function refreshPullRequest() {
 
 /* UTILITY FUNCTION */
 
-function isOwnerActive( _owner ) {
-    const checkbox = document.getElementById("owner-checkbox-" + _owner);
-    return checkbox.checked;
+
+function applyFilters() {
+    const pulls = document.querySelectorAll(".pull-request-instance");
+    pulls.forEach((el) => {
+        let mustBeDisplayed = true;
+        filterTypes.forEach(type => {
+            const value = el.getAttribute("data-filter-" + type);
+            if (false === GhContext.isFilterActive(type, value)) {
+                mustBeDisplayed = false;
+            }
+        });
+        if (mustBeDisplayed) {
+            el.classList.remove("w3-hide");
+        } else {
+            el.classList.add("w3-hide");
+        }
+    })
+    checkNoPullRequest();
 }
 
-function isMatchingActive( _type ) {
-    const checkbox = document.getElementById("matching-checkbox-" + _type);
-    return checkbox.checked;
+function isOwnerActive(_value) {
+    return GhContext.isFilterActive("owner", _value);
 }
 
-function filterPullRequest( _el ) {
-    const matching = _el.getAttribute("data-matching");
-    const owner = _el.getAttribute("data-owner");
-    if (isOwnerActive(owner) && isMatchingActive(matching)) {
-        _el.classList.remove("w3-hide");
-    } else {
-        _el.classList.add("w3-hide");
-    }
+function isMatchingActive(_value) {
+    return GhContext.isFilterActive("matching", _value);
 }
 
 function checkNoPullRequest() {
@@ -124,17 +134,18 @@ window.document.addEventListener("gh_pull_request",
 
         const instance = template.cloneNode(true);
         instance.id = "pull-request-" + pr.id;
+        instance.classList.add("pull-request-instance");
         if (isOwnerActive(owner) && isMatchingActive(matching)) {
             // Put this node visible, only of the owner is selected
             instance.classList.remove("w3-hide");
         }
         instance.setAttribute("data-created", new Date(pr.created_at).getTime())
         instance.setAttribute("data-last-check", lastCheck.getTime())
-        instance.setAttribute("data-owner", owner)
-        instance.setAttribute("data-matching", matching)
+        instance.setAttribute("data-filter-owner", owner)
+        instance.setAttribute("data-filter-matching", matching)
 
         instance.addEventListener("click", function () {
-            window.open(pr.html_url,'_blank');
+            window.open(pr.html_url, '_blank');
         });
 
         const prTitle = instance.querySelector("#pull-request-title");
@@ -186,32 +197,20 @@ window.document.addEventListener("gh_owners",
         const template = document.getElementById("owner-template");
 
         const pulls = document.querySelectorAll(".owner-instance");
-        pulls.forEach( (el) => {
-            // Remove previous owners
-            if (el !== template) {
-                el.remove();
-            }
+        pulls.forEach((el) => {
+            el.remove();
         })
 
         for (const owner of owners) {
             const instance = template.cloneNode(true);
             instance.id = "owner-" + owner;
+            instance.setAttribute("data-filter", "owner");
+            instance.setAttribute("data-filter-value", owner);
+            instance.classList.add("owner-instance");
             instance.classList.remove("w3-hide");
-            instance.addEventListener('change', e => {
-                const pulls = document.querySelectorAll("div[data-owner='" + owner + "']");
-                pulls.forEach( (el) => {
-                    filterPullRequest(el);
-                })
-                checkNoPullRequest();
-            });
+            instance.innerText = "@" + owner;
 
-            const ownerChekbox = instance.querySelector("#owner-checkbox");
-            ownerChekbox.id = "owner-checkbox-" + owner;
-
-            const ownerLabel = instance.querySelector("#owner-label");
-            ownerLabel.id = "owner-label-" + owner;
-            ownerLabel.setAttribute("for", "owner-checkbox-" + owner);
-            ownerLabel.innerText = "@" + owner;
+            instance.addEventListener('click', onClickFilter);
 
             // Add the instance to the parent
             const parent = document.getElementById("owner-list");
@@ -227,12 +226,28 @@ window.document.addEventListener("gh_pull_requests_refreshed",
         // Remove all pull requests which were not been updated (probably merged or closed)
         const parent = document.getElementById("dashboard");
         const pulls = parent.querySelectorAll(".pull-request-instance");
-        pulls.forEach( el => {
+        pulls.forEach(el => {
             const elLastCheck = new Date(parseInt(el.getAttribute("data-last-check")));
             if (elLastCheck < lastCheck) {
                 el.remove();
             }
         });
         checkNoPullRequest();
+
+    }, false);
+
+
+window.document.addEventListener("gh_filter_toggle",
+    (e) => {
+        const type = e.detail.type;
+        const value = e.detail.value;
+        const active = e.detail.active;
+        const el = document.querySelector("button[data-filter=" + type + "][data-filter-value=" + value + "]")
+        if (active) {
+            el.classList.remove("w3-disabled")
+        } else {
+            el.classList.add("w3-disabled")
+        }
+        applyFilters()
 
     }, false);

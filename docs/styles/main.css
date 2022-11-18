@@ -18,5 +18,5 @@ body {
 }
 
 .pointable {
-    cursor: pointer;
+    cursor: pointer !important;
 }
