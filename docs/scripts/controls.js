@@ -1,4 +1,19 @@
 const steps = ["loading", "connection", "dashboard"];
+const matchings = ["direct", "team"];
+
+function init() {
+    for (const matching of matchings) {
+        const el = document.getElementById("matching-checkbox-" + matching);
+        el.addEventListener('change', e => {
+            const pulls = document.querySelectorAll("div[data-matching='" + matching + "']");
+            pulls.forEach( (el) => {
+                filterPullRequest(el);
+            })
+        });
+    }
+}
+
+/* VIEW MANAGEMENT */
 
 function loading_step() {
     setTimeout(function () {
@@ -40,6 +55,30 @@ async function refreshPullRequest() {
     setTimeout(refreshPullRequest, 1000 * 60 * 10) // refresh every 10 min
 }
 
+/* UTILITY FUNCTION */
+
+function isOwnerActive( _owner ) {
+    const checkbox = document.getElementById("owner-checkbox-" + _owner);
+    return checkbox.checked;
+}
+
+function isMatchingActive( _type ) {
+    const checkbox = document.getElementById("matching-checkbox-" + _type);
+    return checkbox.checked;
+}
+
+function filterPullRequest( _el ) {
+    const matching = _el.getAttribute("data-matching");
+    const owner = _el.getAttribute("data-owner");
+    if (isOwnerActive(owner) && isMatchingActive(matching)) {
+        _el.classList.remove("w3-hide");
+    } else {
+        _el.classList.add("w3-hide");
+    }
+}
+
+/* EVENT LISTENERS */
+
 window.document.addEventListener("status_message",
     (e) => {
         document.getElementById("status-message").innerText = e.detail.message;
@@ -62,6 +101,8 @@ window.document.addEventListener("gh_pull_request",
     (e) => {
         const pr = e.detail.pull_request;
         const lastCheck = e.detail.last_check;
+        const owner = pr.repository.owner.login;
+        const matching = pr.matching;
 
         // Disable loading as soon as we receive a first pull request
         document.getElementById("dashboard-loading").classList.add("w3-hide");
@@ -71,10 +112,14 @@ window.document.addEventListener("gh_pull_request",
 
         const instance = template.cloneNode(true);
         instance.id = "pull-request-" + pr.id;
-        instance.classList.remove("w3-hide");
-        instance.classList.add("pull-request-owner-" + pr.repository.owner.login);
+        if (isOwnerActive(owner) && isMatchingActive(matching)) {
+            // Put this node visible, only of the owner is selected
+            instance.classList.remove("w3-hide");
+        }
         instance.setAttribute("data-created", new Date(pr.created_at).getTime())
         instance.setAttribute("data-last-check", lastCheck.getTime())
+        instance.setAttribute("data-owner", owner)
+        instance.setAttribute("data-matching", matching)
 
         const prTitle = instance.querySelector("#pull-request-title");
         prTitle.id = "pull-request-title-" + pr.id;
@@ -135,16 +180,10 @@ window.document.addEventListener("gh_owners",
             instance.id = "owner-" + owner;
             instance.classList.remove("w3-hide");
             instance.addEventListener('change', e => {
-                const pulls = document.querySelectorAll(".pull-request-owner-" + owner);
-                if (e.target.checked) {
-                    pulls.forEach( (el) => {
-                        el.classList.remove("w3-hide");
-                    })
-                } else {
-                    pulls.forEach( (el) => {
-                        el.classList.add("w3-hide");
-                    })
-                }
+                const pulls = document.querySelectorAll("div[data-owner='" + owner + "']");
+                pulls.forEach( (el) => {
+                    filterPullRequest(el);
+                })
             });
 
             const ownerChekbox = instance.querySelector("#owner-checkbox");

@@ -15,7 +15,7 @@ const GhContext = {
 
     repositories: [],  // { id, full_name, pushed_at, owner }
 
-    pull_requests: [], // { id, number, title, state, html_url, created_at, closed_at, merged_at, repository }
+    pull_requests: [], // { id, number, title, state, html_url, created_at, closed_at, merged_at, matching, author, repository }
 
     owners: [],
 
@@ -121,7 +121,8 @@ const GhContext = {
                 prloop: for (const pr of pullrequests) {
                     for (const reviewer of pr.requested_reviewers) {
                         if (reviewer.id === this.user.id) {
-                            const prdata = { id: pr.id, number: pr.number, title: pr.title, html_url: pr.html_url, state: pr.state, created_at: pr.created_at, closed_at: pr.closed_at, merged_at: pr.merged_at, repository: repository };
+                            const author = { id: pr.user.id, login: pr.user.login };
+                            const prdata = { id: pr.id, number: pr.number, title: pr.title, html_url: pr.html_url, state: pr.state, created_at: pr.created_at, closed_at: pr.closed_at, merged_at: pr.merged_at, matching: "direct", repository: repository, author: author };
                             updatedPullRequests.push( prdata )
                             window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata, last_check: now}}));
                             continue prloop;
@@ -129,7 +130,13 @@ const GhContext = {
                     }
                     for (const team of pr.requested_teams) {
                         if (this.team_ids.includes(team.id)) {
-                            const prdata = { id: pr.id, number: pr.number, title: pr.title, html_url: pr.html_url, state: pr.state, created_at: pr.created_at, closed_at: pr.closed_at, merged_at: pr.merged_at, repository: repository };
+                            const author = { id: pr.user.id, login: pr.user.login };
+                            let matching = "team";
+                            if (author.id === this.user.id) {
+                                // If we are the author of the Pull Request, fallback to direct matching
+                                matching = "direct";
+                            }
+                            const prdata = { id: pr.id, number: pr.number, title: pr.title, html_url: pr.html_url, state: pr.state, created_at: pr.created_at, closed_at: pr.closed_at, merged_at: pr.merged_at, matching: matching, repository: repository, author: author };
                             updatedPullRequests.push( prdata )
                             window.document.dispatchEvent(new CustomEvent('gh_pull_request', {detail: {pull_request: prdata, last_check: now}}));
                             continue prloop;

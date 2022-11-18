@@ -14,7 +14,7 @@
     <script type="text/javascript" src="./scripts/github.js"></script>
 </head>
 
-<body class="w3-black" onload="loading_step()">
+<body class="w3-black" onload="init(); loading_step()">
 
 <header class="w3-bar w3-teal">
     <div id="header-user" class="w3-bar-item w3-hide">
@@ -41,8 +41,22 @@
     </div>
 
     <div id="dashboard" class="w3-hide">
-        <div id="owner-list" class="w3-container w3-right-align">
-            <span id="owner-template" class="w3-hide w3-margin-left w3-margin-right w3-margin-bottom">
+
+        <div id="matching-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
+            Matching:
+            <span class="w3-margin-left">
+                <input id="matching-checkbox-direct" type="checkbox" class="w3-check" checked="checked">
+                <label id="matching-label-direct" for="matching-checkbox-direct">Direct</label>
+            </span>
+            <span class="w3-margin-left">
+                <input id="matching-checkbox-team" type="checkbox" class="w3-check" checked="checked">
+                <label id="matching-label-team" for="matching-checkbox-team">Team</label>
+            </span>
+        </div>
+
+        <div id="owner-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
+            Organizations:
+            <span id="owner-template" class="w3-hide w3-margin-left">
                 <input id="owner-checkbox" type="checkbox" class="w3-check" checked="checked">
                 <label id="owner-label" for="owner-checkbox">Me</label>
             </span>
@@ -52,7 +66,7 @@
             <h1>... LOADING ...</h1>
         </div>
 
-        <div id="pull-request-template" class="w3-card-4 w3-white w3-container w3-padding w3-section w3-hide pull-request-instance" data-created="0" data-last-check="0">
+        <div id="pull-request-template" class="w3-card-4 w3-white w3-container w3-padding w3-section w3-hide pull-request-instance" data-created="0" data-last-check="0" data-owner="me">
             <div class="w3-row-padding">
                 <div class="w3-col m12 l12">
                     <div>
