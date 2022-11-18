@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>Github PR Dashboard</title>
+    <title>Pull Requests Buddy</title>
 
     <meta http-equiv='Content-Security-Policy'
           CONTENT="default-src 'self'; script-src 'self' 'unsafe-inline' u2032.github.io; style-src 'self' 'unsafe-inline' u2032.github.io fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' *; connect-src 'self' api.github.com">
@@ -29,37 +29,60 @@
     </div>
 
     <div id="connection" class="w3-hide">
-        <form class="w3-card-4 w3-white w3-padding-large w3-round-large" onsubmit="return connection_step();">
-            <label class="w3-margin w3-large">Enter your Github Token:</label>
-            <input id="gh-token" type="password" class="w3-input w3-border"/>
-            <button class="w3-btn w3-blue w3-margin" onclick="return connection_step();">CONNECT</button>
-        </form>
-        <div id="connection-error" class="w3-panel w3-yellow w3-hide">
-            <h3>Warning!</h3>
-            <p>Unable to connect to Github API. Is your Github Token correct?</p>
+        <div class="w3-card-4 w3-white w3-padding-large w3-round-large">
+            <h1>Pull Requests Buddy</h1>
+            <div class="w3-section">
+                <p>
+                    This page is intended to display a dashboard of the pending pull requests relevant for you.
+                    To do that, this page needs to be able to connect to the GitHub API throught a personnal GitHub
+                    token with the read access to the respositories you want to be able to track.
+                    If you have none, you can generate a new GitHub Token from [<a
+                        href="https://github.com/settings/tokens" target="_blank">your account's settings</a>].
+                </p>
+                <p>
+                    This token stays client's side in your browser and it's not send to a server. Actually, the whole
+                    content of this page and dashboard is generated client's side and doesn't male any call to a service
+                    except GitHub itself to retrieve the information.
+                </p>
+            </div>
+            <form class="w3-section" onsubmit="return connection_step();">
+                <label class="w3-margin w3-large">Enter your Github Token:</label>
+                <input id="gh-token" type="password" class="w3-input w3-border w3-pale-yellow" required="true"/>
+                <button class="w3-btn w3-blue w3-margin w3-right w3-border" onclick="return connection_step();">
+                    CONNECT
+                </button>
+            </form>
+            <div class="w3-clear">&nbsp;</div>
+        </div>
+        <div id="connection-error" class="w3-panel w3-yellow w3-border w3-border-white w3-hide">
+            <h3>Oops!</h3>
+            <p>We were unable to connect to the GitHub API to retrieve your information. Is your GitHub Token
+                correct?</p>
         </div>
     </div>
 
     <div id="dashboard" class="w3-hide">
 
-        <div id="matching-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
-            Matching:
-            <span class="w3-margin-left">
-                <input id="matching-checkbox-direct" type="checkbox" class="w3-check" checked="checked">
-                <label id="matching-label-direct" for="matching-checkbox-direct">Direct</label>
-            </span>
-            <span class="w3-margin-left">
-                <input id="matching-checkbox-team" type="checkbox" class="w3-check" checked="checked">
-                <label id="matching-label-team" for="matching-checkbox-team">Team</label>
-            </span>
-        </div>
+        <div>
+            <div id="matching-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
+                Matching:
+                <span class="w3-margin-left">
+                    <input id="matching-checkbox-direct" type="checkbox" class="w3-check" checked="checked">
+                    <label id="matching-label-direct" for="matching-checkbox-direct">Direct</label>
+                </span>
+                <span class="w3-margin-left">
+                    <input id="matching-checkbox-team" type="checkbox" class="w3-check" checked="checked">
+                    <label id="matching-label-team" for="matching-checkbox-team">Team</label>
+                </span>
+            </div>
 
-        <div id="owner-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
-            Organizations:
-            <span id="owner-template" class="w3-hide w3-margin-left owner-instance">
-                <input id="owner-checkbox" type="checkbox" class="w3-check" checked="checked">
-                <label id="owner-label" for="owner-checkbox">Me</label>
-            </span>
+            <div id="owner-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
+                Organizations:
+                <span id="owner-template" class="w3-margin-left w3-hide owner-instance">
+                    <input id="owner-checkbox" type="checkbox" class="w3-check" checked="checked">
+                    <label id="owner-label" for="owner-checkbox">Me</label>
+                </span>
+            </div>
         </div>
 
         <div id="dashboard-loading" class="w3-center w3-animate-fading w3-section w3-margin-top">
@@ -70,7 +93,9 @@
             <h1>... No Pull Request found ...</h1>
         </div>
 
-        <div id="pull-request-template" class="w3-card-4 w3-white w3-container w3-padding w3-section w3-hover-light-blue w3-hide pull-request-instance pointable" data-created="0" data-owner="me">
+        <div id="pull-request-template"
+             class="w3-card-4 w3-white w3-container w3-padding w3-section w3-hover-light-blue w3-hide pull-request-instance pointable"
+             data-created="0" data-owner="me">
             <div class="w3-row-padding">
                 <div class="w3-col m12 l12">
                     <div>

@@ -154,6 +154,7 @@ const GhContext = {
     storeInLocalStorage : async function () {
         // The user informaiton is not store in the storage
         localStorage.setItem('gh_context_version', this.version );
+        localStorage.setItem('gh_context_user_id', this.user.id );
         localStorage.setItem('gh_context_last_check', this.lastCheck.getTime() );
         localStorage.setItem('gh_context_team_ids', JSON.stringify(this.team_ids) );
         localStorage.setItem('gh_context_owners', JSON.stringify(this.owners) );
@@ -169,6 +170,14 @@ const GhContext = {
                 localStorage.clear();
                 return;
             }
+
+            let userId = localStorage.getItem('gh_context_user_id');
+            if (userId !== null && parseInt(userId) !== this.user.id) {
+                console.info("User's id doesn't match, not reloading the existing data");
+                localStorage.clear();
+                return;
+            }
+
             this.lastCheck = new Date(parseInt(localStorage.getItem('gh_context_last_check')));
             this.team_ids = JSON.parse(localStorage.getItem('gh_context_team_ids') ?? "[]");
             this.owners = JSON.parse(localStorage.getItem('gh_context_owners') ?? "[]");
