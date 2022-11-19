@@ -1,5 +1,5 @@
 const steps = ["loading", "connection", "dashboard"];
-const filterTypes = ["matching", "owner"]
+const filterTypes = ["matching", "organization"]
 
 /* Configuration  */
 
@@ -42,6 +42,7 @@ function dashboard_step() {
     setTimeout(async function () {
         await GhContext.reloadFromLocalStorage();
         await GhContext.checkTeams();
+        await GhContext.checkOrganizations();
         await refreshPullRequest();
         document.getElementById("dashboard-loading").classList.add("w3-hide");
     }, 500);
@@ -80,8 +81,8 @@ function applyFilters() {
     checkNoPullRequest();
 }
 
-function isOwnerActive(_value) {
-    return GhContext.isFilterActive("owner", _value);
+function isOrganizationActive(_value) {
+    return GhContext.isFilterActive("organization", _value);
 }
 
 function isMatchingActive(_value) {
@@ -123,7 +124,7 @@ window.document.addEventListener("gh_pull_request",
     (e) => {
         const pr = e.detail.pull_request;
         const lastCheck = e.detail.last_check;
-        const owner = pr.repository.owner.login;
+        const owner = pr.repository.owner;
         const matching = pr.matching;
 
         // Disable loading as soon as we receive a first pull request
@@ -135,13 +136,13 @@ window.document.addEventListener("gh_pull_request",
         const instance = template.cloneNode(true);
         instance.id = "pull-request-" + pr.id;
         instance.classList.add("pull-request-instance");
-        if (isOwnerActive(owner) && isMatchingActive(matching)) {
+        if (isOrganizationActive(owner.login) && isMatchingActive(matching)) {
             // Put this node visible, only of the owner is selected
             instance.classList.remove("w3-hide");
         }
         instance.setAttribute("data-created", new Date(pr.created_at).getTime())
         instance.setAttribute("data-last-check", lastCheck.getTime())
-        instance.setAttribute("data-filter-owner", owner)
+        instance.setAttribute("data-filter-organization", owner.login)
         instance.setAttribute("data-filter-matching", matching)
 
         instance.addEventListener("click", function () {
@@ -189,31 +190,44 @@ window.document.addEventListener("gh_pull_request",
 
     }, false);
 
-window.document.addEventListener("gh_owners",
+window.document.addEventListener("gh_organizations",
     (e) => {
-        const owners = e.detail.owners;
+        const user = e.detail.user;
+        const orgs = e.detail.orgs;
 
-        // Display the pull request
-        const template = document.getElementById("owner-template");
+        const template = document.getElementById("filter-organization-template");
+        const parent = document.getElementById("filter-organization-list");
 
-        const pulls = document.querySelectorAll(".owner-instance");
-        pulls.forEach((el) => {
-            el.remove();
-        })
-
-        for (const owner of owners) {
-            const instance = template.cloneNode(true);
-            instance.id = "owner-" + owner;
-            instance.setAttribute("data-filter", "owner");
-            instance.setAttribute("data-filter-value", owner);
-            instance.classList.add("owner-instance");
+        // Add a first item for the user itself
+        let instance = document.getElementById("filter-organization-" + user.login);
+        if (instance === null) {
+            instance = template.cloneNode(true);
+            instance.id = "filter-organization-" + user.login;
+            instance.setAttribute("data-filter", "organization");
+            instance.setAttribute("data-filter-value", user.login);
+            instance.classList.add("filter-organization-instance");
             instance.classList.remove("w3-hide");
-            instance.innerText = "@" + owner;
-
+            instance.innerText = "@" + user.login;
             instance.addEventListener('click', onClickFilter);
+        } else {
+            instance.remove();
+        }
+        parent.appendChild(instance);
 
-            // Add the instance to the parent
-            const parent = document.getElementById("owner-list");
+        for (const org of orgs) {
+            let instance = document.getElementById("filter-organization-" + org.login);
+            if (instance === null) {
+                instance = template.cloneNode(true);
+                instance.id = "filter-organization-" + org.login;
+                instance.setAttribute("data-filter", "organization");
+                instance.setAttribute("data-filter-value", org.login);
+                instance.classList.add("filter-organization-instance");
+                instance.classList.remove("w3-hide");
+                instance.innerText = "@" + org.login;
+                instance.addEventListener('click', onClickFilter);
+            } else {
+                instance.remove()
+            }
             parent.appendChild(instance);
         }
 
