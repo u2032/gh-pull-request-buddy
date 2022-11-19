@@ -11,7 +11,8 @@ const GhContext = {
     user: {
         id: null,
         login: null,
-        name: null
+        name: null,
+        avatar_url: null
     },
 
     /* Ids of the teams the logged user is part of */
@@ -58,6 +59,7 @@ const GhContext = {
         this.user.id = null;
         this.user.login = null;
         this.user.name = null;
+        this.user.avatar_url = null;
         this.gh_token = _token;
 
         console.debug("Connecting to github ...")
@@ -66,6 +68,7 @@ const GhContext = {
             this.user.id = response.id;
             this.user.login = response.login;
             this.user.name = response.name;
+            this.user.avatar_url = response.avatar_url;
         }
 
         const event = new CustomEvent('gh_connection', {detail: {isConnected: this.isConnected()}});
@@ -120,7 +123,7 @@ const GhContext = {
                                 id: o.id,
                                 full_name: o.full_name,
                                 pushed_at: o.pushed_at,
-                                owner: {id: o.owner.id, login: o.owner.login}
+                                owner: {id: o.owner.id, login: o.owner.login, avatar_url: o.owner.avatar_url}
                             });
                         }
                     });
@@ -167,7 +170,7 @@ const GhContext = {
                 prloop: for (const pr of pullrequests) {
                     for (const reviewer of pr.requested_reviewers) {
                         if (reviewer.id === this.user.id) {
-                            const author = {id: pr.user.id, login: pr.user.login};
+                            const author = {id: pr.user.id, login: pr.user.login, avatar_url: pr.user.avatar_url};
                             const prdata = {
                                 id: pr.id,
                                 number: pr.number,
@@ -193,7 +196,7 @@ const GhContext = {
                     }
                     for (const team of pr.requested_teams) {
                         if (this.team_ids.includes(team.id)) {
-                            const author = {id: pr.user.id, login: pr.user.login};
+                            const author = {id: pr.user.id, login: pr.user.login, avatar_url: pr.user.avatar_url};
                             let matching = "team";
                             if (author.id === this.user.id) {
                                 // If we are the author of the Pull Request, fallback to direct matching

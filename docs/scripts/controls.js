@@ -11,8 +11,12 @@ function init() {
 }
 
 function onClickFilter(e) {
-    const type = e.target.getAttribute("data-filter");
-    const value = e.target.getAttribute("data-filter-value");
+    let button = e.target;
+    if (!(button instanceof HTMLButtonElement)) {
+        button = e.target.parentNode;
+    }
+    const type = button.getAttribute("data-filter");
+    const value = button.getAttribute("data-filter-value");
     GhContext.toggleFilter(type, value);
 }
 
@@ -149,20 +153,24 @@ window.document.addEventListener("gh_pull_request",
             window.open(pr.html_url, '_blank');
         });
 
-        const prTitle = instance.querySelector("#pull-request-title");
-        prTitle.id = "pull-request-title-" + pr.id;
+        const prAuthor = instance.querySelector(".pull-request-author");
+        prAuthor.src = pr.author.avatar_url;
+        prAuthor.title = prAuthor.alt = pr.author.login;
+
+        const prTitle = instance.querySelector(".pull-request-title");
         prTitle.innerText = pr.title;
 
-        const prNumber = instance.querySelector("#pull-request-number");
-        prNumber.id = "pull-request-number-" + pr.id;
+        const prNumber = instance.querySelector(".pull-request-number");
         prNumber.innerText = "#" + pr.number;
 
-        const prRepo = instance.querySelector("#pull-request-repo");
-        prRepo.id = "pull-request-repo-" + pr.id;
+        const prRepo = instance.querySelector(".pull-request-repo");
         prRepo.innerText = pr.repository.full_name;
 
-        const prCreatedAt = instance.querySelector("#pull-request-created-at");
-        prCreatedAt.id = "pull-request-created-at-" + pr.id;
+        const prOwner = instance.querySelector(".pull-request-repo-owner");
+        prOwner.src = pr.repository.owner.avatar_url;
+        prOwner.title = prAuthor.alt = pr.repository.owner.login;
+
+        const prCreatedAt = instance.querySelector(".pull-request-created-at");
         prCreatedAt.innerText = new Date(pr.created_at).toLocaleString();
 
         // Remove the existing instance with the same ID
@@ -207,10 +215,13 @@ window.document.addEventListener("gh_organizations",
             instance.setAttribute("data-filter-value", user.login);
             instance.classList.add("filter-organization-instance");
             instance.classList.remove("w3-hide");
-            instance.innerText = "@" + user.login;
             instance.addEventListener('click', onClickFilter);
-        } else {
-            instance.remove();
+
+            let img = instance.querySelector("img");
+            img.src = user.avatar_url;
+
+            let txt = instance.querySelector("span");
+            txt.innerText = "@" + user.login;
         }
         parent.appendChild(instance);
 
@@ -223,10 +234,14 @@ window.document.addEventListener("gh_organizations",
                 instance.setAttribute("data-filter-value", org.login);
                 instance.classList.add("filter-organization-instance");
                 instance.classList.remove("w3-hide");
-                instance.innerText = "@" + org.login;
+
+                let img = instance.querySelector("img");
+                img.src = org.avatar_url;
+
+                let txt = instance.querySelector("span");
+                txt.innerText = "@" + org.login;
+
                 instance.addEventListener('click', onClickFilter);
-            } else {
-                instance.remove()
             }
             parent.appendChild(instance);
         }
