@@ -26,7 +26,7 @@ const GhContext = {
     repositories: [],  // { id, full_name, pushed_at, owner }
 
     /* List of all the pull requests opened on those repositories */
-    pull_requests: [], // { id, number, title, state, html_url, created_at, closed_at, merged_at, matching, author, repository }
+    pull_requests: [], // { id, number, title, state, html_url, created_at, closed_at, merged_at, matching, author, repository, reviews }
 
     /* Filter's name and status */
     filters: [],
@@ -80,12 +80,12 @@ const GhContext = {
         return this.user.id !== null;
     },
 
-
     refreshPullRequests: async function () {
         try {
             this.running = true;
             await GhContext.checkRepositories();
             await GhContext.checkPullRequests();
+            await GhContext.checkReviewStatus();
             await GhContext.storeInLocalStorage();
         } finally {
             this.running = false;
@@ -195,63 +195,74 @@ const GhContext = {
             dispatchStatusMessage("Checking repository: " + repository.full_name);
             const pullrequests = await ghGET(this.gh_token, "/repos/" + repository.full_name + "/pulls?state=open&sort=created&direction=desc&per_page=50");
             if (false !== pullrequests) {
-                prloop: for (const pr of pullrequests) {
-                    for (const reviewer of pr.requested_reviewers) {
-                        if (reviewer.id === this.user.id) {
-                            const author = {id: pr.user.id, login: pr.user.login, avatar_url: pr.user.avatar_url};
-                            const prdata = {
-                                id: pr.id,
-                                number: pr.number,
-                                title: pr.title,
-                                html_url: pr.html_url,
-                                state: pr.state,
-                                created_at: pr.created_at,
-                                closed_at: pr.closed_at,
-                                merged_at: pr.merged_at,
-                                matching: "direct",
-                                repository: repository,
-                                author: author
-                            };
-                            updatedPullRequests.push(prdata)
-                            window.document.dispatchEvent(new CustomEvent('gh_pull_request', {
-                                detail: {
-                                    pull_request: prdata,
-                                    last_check: now
-                                }
-                            }));
-                            continue prloop;
-                        }
-                    }
+                for (const pr of pullrequests) {
+                    let matching = null;
+                    // Check if a review request is pending for a team of the user
                     for (const team of pr.requested_teams) {
                         if (this.team_ids.includes(team.id)) {
-                            const author = {id: pr.user.id, login: pr.user.login, avatar_url: pr.user.avatar_url};
-                            let matching = "team";
-                            if (author.id === this.user.id) {
-                                // If we are the author of the Pull Request, fallback to direct matching
-                                matching = "direct";
-                            }
-                            const prdata = {
-                                id: pr.id,
-                                number: pr.number,
-                                title: pr.title,
-                                html_url: pr.html_url,
-                                state: pr.state,
-                                created_at: pr.created_at,
-                                closed_at: pr.closed_at,
-                                merged_at: pr.merged_at,
-                                matching: matching,
-                                repository: repository,
-                                author: author
-                            };
-                            updatedPullRequests.push(prdata)
-                            window.document.dispatchEvent(new CustomEvent('gh_pull_request', {
-                                detail: {
-                                    pull_request: prdata,
-                                    last_check: now
-                                }
-                            }));
-                            continue prloop;
+                            matching = "team";
                         }
+                    }
+                    // Check if a review request is pending for the user
+                    for (const reviewer of pr.requested_reviewers) {
+                        if (reviewer.id === this.user.id) {
+                            matching = "direct";
+                        }
+                    }
+                    // Check if the user is the author of the review
+                    if (pr.user.id === this.user.id) {
+                        matching = "direct";
+                    }
+
+                    // If a matching has been found, keep this PR data and check the reviews
+                    if (matching != null) {
+                        const author = {id: pr.user.id, login: pr.user.login, avatar_url: pr.user.avatar_url};
+                        const reviews = [];
+                        for (const team of pr.requested_teams) {
+                            reviews.push({
+                                id: team.id,
+                                team: team.name,
+                                state: "PENDING"
+                            })
+                        }
+                        for (const reviewer of pr.requested_reviewers) {
+                            reviews.push({
+                                id: reviewer.id,
+                                login: reviewer.login,
+                                avatar_url: reviewer.avatar_url,
+                                state: "PENDING"
+                            })
+                        }
+                        const madeReviews = await ghGET(this.gh_token, "/repos/" + repository.full_name + "/pulls/" + pr.number + "/reviews")
+                        for (const reviewer of madeReviews) {
+                            reviews.push({
+                                id: reviewer.user.id,
+                                login: reviewer.user.login,
+                                avatar_url: reviewer.user.avatar_url,
+                                state: reviewer.state
+                            })
+                        }
+                        const prdata = {
+                            id: pr.id,
+                            number: pr.number,
+                            title: pr.title,
+                            html_url: pr.html_url,
+                            state: pr.state,
+                            created_at: pr.created_at,
+                            closed_at: pr.closed_at,
+                            merged_at: pr.merged_at,
+                            matching: matching,
+                            repository: repository,
+                            author: author,
+                            reviews: reviews
+                        };
+                        updatedPullRequests.push(prdata)
+                        window.document.dispatchEvent(new CustomEvent('gh_pull_request', {
+                            detail: {
+                                pull_request: prdata,
+                                last_check: now
+                            }
+                        }));
                     }
                 }
             }
@@ -265,6 +276,10 @@ const GhContext = {
                 last_check: now
             }
         }));
+    },
+
+    checkReviewStatus: async function () {
+
     },
 
     storeInLocalStorage: async function () {
@@ -287,7 +302,7 @@ const GhContext = {
                 return;
             }
 
-            let user = JSON.parse(localStorage.getItem('gh_context_user') ?? "[]");
+            let user = JSON.parse(localStorage.getItem('gh_context_user') ?? "{}");
             if (user.id !== null && user.id !== undefined && parseInt(user.id) !== this.user.id) {
                 console.info("User's id doesn't match, not reloading the existing data");
                 localStorage.clear();
@@ -297,8 +312,8 @@ const GhContext = {
             this.lastCheck = new Date(parseInt(localStorage.getItem('gh_context_last_check')));
             this.team_ids = JSON.parse(localStorage.getItem('gh_context_team_ids') ?? "[]");
             this.organisations = JSON.parse(localStorage.getItem('gh_context_organizations') ?? "[]");
-            this.repositories = JSON.parse(localStorage.getItem('gh_context_repositories') ?? {});
-            this.pull_requests = JSON.parse(localStorage.getItem('gh_context_pull_requests') ?? {});
+            this.repositories = JSON.parse(localStorage.getItem('gh_context_repositories') ?? "[]");
+            this.pull_requests = JSON.parse(localStorage.getItem('gh_context_pull_requests') ?? "[]");
 
             // Retrigger events to update the view
             window.document.dispatchEvent(new CustomEvent('gh_organizations', {

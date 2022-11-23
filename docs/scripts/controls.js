@@ -164,6 +164,32 @@ window.document.addEventListener("gh_pull_request",
         const prCreatedAt = instance.querySelector(".pull-request-created-at");
         prCreatedAt.innerText = new Date(pr.created_at).toLocaleString();
 
+        const prReviewList = instance.querySelector(".pull-request-review-list");
+        const prReviewTemplate = prReviewList.querySelector(".pull-request-review-template");
+        for (let review of pr.reviews) {
+            const prReviewInstance = prReviewTemplate.cloneNode(true);
+            prReviewInstance.classList.replace("w3-hide", "w3-show-inline-block");
+
+            const prReviewName = prReviewInstance.querySelector(".pull-request-review-name");
+            prReviewName.innerText = "@" + (review.login ?? review.team);
+
+            const prReviewIcon = prReviewInstance.querySelector(".pull-request-review-icon");
+            prReviewIcon.title = review.state;
+            if (review.state === "APPROVED") {
+                prReviewIcon.classList.add("fa-solid", "fa-circle-check", "w3-text-green");
+            } else if (review.state === "CHANGES_REQUESTED") {
+                prReviewIcon.classList.add("fa-solid", "fa-square-xmark", "w3-text-red");
+            } else if (review.state === "PENDING") {
+                prReviewIcon.classList.add("fa-solid", "fa-hourglass-half", "w3-text-gray");
+                prReviewName.classList.add("w3-text-gray");
+            } else {
+                prReviewIcon.classList.add("fa-solid", "fa-question", "w3-text-gray");
+                prReviewName.classList.add("w3-text-gray");
+            }
+
+            prReviewList.appendChild(prReviewInstance)
+        }
+
         // Remove the existing instance with the same ID
         const previous = document.getElementById("pull-request-" + pr.id);
         if (previous !== null) {

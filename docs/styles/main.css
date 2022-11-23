@@ -1,5 +1,5 @@
 body, h1, h2, h3, h4, h5, h6 {
-    font-family: Roboto, sans-serif;
+    font-family: 'Noto Sans', sans-serif;
 }
 
 body {
@@ -19,4 +19,14 @@ body {
 
 .pointable {
     cursor: pointer !important;
+}
+
+#connection, .pull-request-instance {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.pull-request-review-template {
+    margin-left: 8px;
 }
