@@ -47,24 +47,15 @@ function dashboard_step() {
         await GhContext.reloadFromLocalStorage();
         await GhContext.checkTeams();
         await GhContext.checkOrganizations();
-        await refreshPullRequest();
+        await GhContext.refreshPullRequests();
+        await GhContext.startScheduler();
         document.getElementById("dashboard-loading").classList.add("w3-hide");
     }, 500);
     return false;
 }
 
-async function refreshPullRequest() {
-    try {
-        await GhContext.checkRepositories();
-        await GhContext.checkPullRequests();
-        await GhContext.storeInLocalStorage();
-    } catch (_ignored) {
-    }
-    setTimeout(refreshPullRequest, 1000 * 60 * 10) // refresh every 10 min
-}
 
 /* UTILITY FUNCTION */
-
 
 function applyFilters() {
     const pulls = document.querySelectorAll(".pull-request-instance");

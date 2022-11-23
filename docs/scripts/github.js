@@ -3,6 +3,7 @@ const GhContext = {
     version: "1",
 
     lastCheck: null,
+    running: false,
 
     /* gh_token use for the connection */
     gh_token: null,
@@ -77,6 +78,33 @@ const GhContext = {
 
     isConnected: function () {
         return this.user.id !== null;
+    },
+
+
+    refreshPullRequests: async function () {
+        try {
+            this.running = true;
+            await GhContext.checkRepositories();
+            await GhContext.checkPullRequests();
+            await GhContext.storeInLocalStorage();
+        } finally {
+            this.running = false;
+        }
+    },
+
+    startScheduler: function () {
+        setInterval(function () {
+                if (GhContext.running) {
+                    // An update is already running, do nothing
+                    return;
+                }
+                let nextCheck = new Date(GhContext.lastCheck.getTime() + (1000 * 60 * 10)) // Update each 10 min
+                if (new Date() > nextCheck) {
+                    GhContext.refreshPullRequests();
+                }
+            },
+            1000 * 60 // Run every minute
+        );
     },
 
     checkTeams: async function () {
