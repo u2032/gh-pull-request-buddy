@@ -26,7 +26,7 @@ const GhContext = {
     repositories: [],  // { id, full_name, pushed_at, owner }
 
     /* List of all the pull requests opened on those repositories */
-    pull_requests: [], // { id, number, title, state, html_url, created_at, closed_at, merged_at, matching, author, repository, reviews }
+    pull_requests: [], // { id, number, title, state, html_url, draft, created_at, closed_at, merged_at, matching, author, repository, reviews }
 
     /* Filter's name and status */
     filters: [],
@@ -216,8 +216,29 @@ const GhContext = {
 
                     // If a matching has been found, keep this PR data and check the reviews
                     if (matching != null) {
+                        const madeReviews = await ghGET(this.gh_token, "/repos/" + repository.full_name + "/pulls/" + pr.number + "/reviews")
+
                         const author = {id: pr.user.id, login: pr.user.login, avatar_url: pr.user.avatar_url};
                         const reviews = [];
+                        // First add made reviews
+                        for (const reviewer of madeReviews) {
+                            if (reviewer.state === "COMMENTED") {
+                                // Ignore this review entry if it's just a comment
+                                continue;
+                            }
+                            if (reviews.some((element) => {
+                                return element.id === reviewer.user.id
+                            })) {
+                                // Ignore this review if the user already exist
+                                continue;
+                            }
+                            reviews.push({
+                                id: reviewer.user.id,
+                                login: reviewer.user.login,
+                                avatar_url: reviewer.user.avatar_url,
+                                state: reviewer.state
+                            });
+                        }
                         for (const team of pr.requested_teams) {
                             reviews.push({
                                 id: team.id,
@@ -226,6 +247,12 @@ const GhContext = {
                             })
                         }
                         for (const reviewer of pr.requested_reviewers) {
+                            if (reviews.some((element) => {
+                                return element.id === reviewer.id
+                            })) {
+                                // Ignore this review if the user already exist
+                                continue;
+                            }
                             reviews.push({
                                 id: reviewer.id,
                                 login: reviewer.login,
@@ -233,21 +260,14 @@ const GhContext = {
                                 state: "PENDING"
                             })
                         }
-                        const madeReviews = await ghGET(this.gh_token, "/repos/" + repository.full_name + "/pulls/" + pr.number + "/reviews")
-                        for (const reviewer of madeReviews) {
-                            reviews.push({
-                                id: reviewer.user.id,
-                                login: reviewer.user.login,
-                                avatar_url: reviewer.user.avatar_url,
-                                state: reviewer.state
-                            })
-                        }
+
                         const prdata = {
                             id: pr.id,
                             number: pr.number,
                             title: pr.title,
                             html_url: pr.html_url,
                             state: pr.state,
+                            draft: pr.draft,
                             created_at: pr.created_at,
                             closed_at: pr.closed_at,
                             merged_at: pr.merged_at,

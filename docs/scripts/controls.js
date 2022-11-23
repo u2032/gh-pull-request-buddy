@@ -131,8 +131,8 @@ window.document.addEventListener("gh_pull_request",
         const instance = template.cloneNode(true);
         instance.id = "pull-request-" + pr.id;
         instance.classList.add("pull-request-instance");
-        if (isOrganizationActive(owner.login) && isMatchingActive(matching)) {
-            // Put this node visible, only of the owner is selected
+        if (!pr.draft && isOrganizationActive(owner.login) && isMatchingActive(matching)) {
+            // Put this node visible, only of the owner is selected, and not draft
             instance.classList.remove("w3-hide");
         }
         instance.setAttribute("data-created", new Date(pr.created_at).getTime())
@@ -179,7 +179,7 @@ window.document.addEventListener("gh_pull_request",
                 prReviewIcon.classList.add("fa-solid", "fa-circle-check", "w3-text-green");
             } else if (review.state === "CHANGES_REQUESTED") {
                 prReviewIcon.classList.add("fa-solid", "fa-square-xmark", "w3-text-red");
-            } else if (review.state === "PENDING") {
+            } else if (review.state === "PENDING" || review.state === "COMMENTED") {
                 prReviewIcon.classList.add("fa-solid", "fa-hourglass-half", "w3-text-gray");
                 prReviewName.classList.add("w3-text-gray");
             } else {
