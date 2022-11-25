@@ -67,6 +67,11 @@ function applyFilters() {
                 mustBeDisplayed = false;
             }
         });
+
+        if (el.getAttribute("data-draft") != null) {
+            mustBeDisplayed = false;
+        }
+
         if (mustBeDisplayed) {
             el.classList.remove("w3-hide");
         } else {
@@ -132,13 +137,16 @@ window.document.addEventListener("gh_pull_request",
         instance.id = "pull-request-" + pr.id;
         instance.classList.add("pull-request-instance");
         if (!pr.draft && isOrganizationActive(owner.login) && isMatchingActive(matching)) {
-            // Put this node visible, only of the owner is selected, and not draft
+            // Put this node visible, only if the owner is selected, and not draft
             instance.classList.remove("w3-hide");
         }
         instance.setAttribute("data-created", new Date(pr.created_at).getTime())
         instance.setAttribute("data-last-check", lastCheck.getTime())
         instance.setAttribute("data-filter-organization", owner.login)
         instance.setAttribute("data-filter-matching", matching)
+        if (pr.draft) {
+            instance.setAttribute("data-draft", "true");
+        }
 
         instance.addEventListener("click", function () {
             window.open(pr.html_url, '_blank');
@@ -197,21 +205,21 @@ window.document.addEventListener("gh_pull_request",
         }
 
         // Add the instance to the parent
-        if (pr.closed_at === null && pr.merged_at === null) {
-            const parent = document.getElementById("dashboard");
-            parent.appendChild(instance);
+        const parent = document.getElementById("dashboard");
+        parent.appendChild(instance);
 
-            // Sort by creation date
-            let allInstances = Array.from(parent.querySelectorAll(".pull-request-instance"));
-            allInstances.sort((a, b) => {
-                let createdA = parseInt(a.getAttribute("data-created"));
-                let createdB = parseInt(b.getAttribute("data-created"));
-                return createdB - createdA;
-            });
-            allInstances.forEach(function (node) {
-                node.parentNode.append(node);
-            });
-        }
+        // Sort by creation date
+        let allInstances = Array.from(parent.querySelectorAll(".pull-request-instance"));
+        allInstances.sort((a, b) => {
+            let createdA = parseInt(a.getAttribute("data-created"));
+            let createdB = parseInt(b.getAttribute("data-created"));
+            return createdB - createdA;
+        });
+        allInstances.forEach(function (node) {
+            node.parentNode.append(node);
+        });
+        // Reapply filters
+        this.applyFilters();
 
     }, false);
 
