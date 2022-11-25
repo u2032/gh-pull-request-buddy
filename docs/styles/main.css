@@ -30,3 +30,9 @@ body {
 .pull-request-review-template {
     margin-left: 8px;
 }
+
+.flex {
+    display: flex;
+    display: -webkit-flex;
+    display: -webkit-box;
+}

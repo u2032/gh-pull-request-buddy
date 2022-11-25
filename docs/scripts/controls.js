@@ -198,6 +198,11 @@ window.document.addEventListener("gh_pull_request",
             prReviewList.appendChild(prReviewInstance)
         }
 
+        const matchingIcon = instance.querySelector("div[data-matching=" + matching + "]");
+        if (matchingIcon !== null) {
+            matchingIcon.classList.remove("w3-hide")
+        }
+
         // Remove the existing instance with the same ID
         const previous = document.getElementById("pull-request-" + pr.id);
         if (previous !== null) {

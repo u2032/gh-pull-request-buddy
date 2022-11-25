@@ -58,8 +58,9 @@
         </div>
         <div id="connection-error" class="w3-panel w3-yellow w3-border w3-border-white w3-hide">
             <h3>Oops!</h3>
-            <p>We were unable to connect to the GitHub API to retrieve your information. Is your GitHub Token
-                correct?</p>
+            <p>
+                We were unable to connect to the GitHub API to retrieve your information. Is your GitHub Token correct?
+            </p>
         </div>
     </div>
 
@@ -69,10 +70,14 @@
             <div id="matching-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
                 Matching:
                 <button class="w3-btn w3-border w3-round w3-margin-left w3-pale-blue pointable" data-filter="matching"
-                        data-filter-value="direct">DIRECT
+                        data-filter-value="direct">
+                    <span>DIRECT</span>
+                    <i class="fa-sharp fa-solid fa-bullseye w3-text-red"></i>
                 </button>
                 <button class="w3-btn w3-border w3-round w3-margin-left w3-pale-blue pointable" data-filter="matching"
-                        data-filter-value="team">TEAM
+                        data-filter-value="team">
+                    <span>TEAM</span>
+                    <i class="fa-solid fa-users w3-text-purple"></i>
                 </button>
             </div>
 
@@ -95,25 +100,40 @@
         </div>
 
         <div id="pull-request-template"
-             class="w3-card-4 w3-white w3-container w3-padding w3-section w3-hover-light-blue w3-hide pointable">
-            <div class="w3-row-padding">
-                <div class="w3-col m12 l12">
-                    <div>
-                        <img class="pull-request-author" src="" title="" alt="" width="24" height="24"/>
-                        <span class="pull-request-title w3-large bold">This is a title</span>
-                        <span class="pull-request-number w3-large w3-text-dark-gray">#1234</span>
+             class="w3-card-4 w3-padding w3-white w3-section w3-hover-light-blue w3-hide pointable">
+            <div class="w3-row flex">
+                <div class="w3-col s11 m11 l11 flex">
+                    <div class="w3-padding-small">
+                        &nbsp;
                     </div>
                     <div>
-                        <img class="pull-request-repo-owner" src="" width="24" height="24"/>
-                        <span class="pull-request-repo">org/repo-name</span>
+                        <div>
+                            <img class="pull-request-author" src="" title="" alt="" width="24" height="24"/>
+                            <span class="pull-request-title w3-large bold">This is a title</span>
+                            <span class="pull-request-number w3-large w3-text-dark-gray">#1234</span>
+                        </div>
+                        <div>
+                            <img class="pull-request-repo-owner" src="" width="24" height="24"/>
+                            <span class="pull-request-repo">org/repo-name</span>
+                        </div>
+                        <div class="w3-small">
+                            Created: <span class="pull-request-created-at">1985-08-29</span>
+                        </div>
+                        <div class="pull-request-review-list w3-show-inline-block">
+                            <div class="pull-request-review-template w3-hide">
+                                <i class="pull-request-review-icon"></i>
+                                <span class="pull-request-review-name">@u2032</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="w3-small">
-                        Created: <span class="pull-request-created-at">1985-08-29</span>
-                    </div>
-                    <div class="pull-request-review-list w3-show-inline-block">
-                        <div class="pull-request-review-template w3-hide">
-                            <i class="pull-request-review-icon"></i>
-                            <span class="pull-request-review-name">@u2032</span>
+                </div>
+                <div class="w3-col s1 m1 l1 w3-right-align w3-display-container">
+                    <div class="w3-display-bottomright">
+                        <div class="w3-hide" data-matching="direct">
+                            <i class="fa-solid fa-bullseye w3-text-red" title="DIRECT"></i>
+                        </div>
+                        <div class="w3-hide" data-matching="team">
+                            <i class="fa-solid fa-users w3-text-purple" title="TEAM"></i>
                         </div>
                     </div>
                 </div>
