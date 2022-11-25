@@ -302,6 +302,9 @@ window.document.addEventListener("gh_filter_toggle",
         const value = e.detail.value;
         const active = e.detail.active;
         const el = document.querySelector("button[data-filter=" + type + "][data-filter_value=" + value + "]")
+        if (el === null) {
+            return;
+        }
         if (active) {
             el.classList.remove("w3-disabled")
         } else {

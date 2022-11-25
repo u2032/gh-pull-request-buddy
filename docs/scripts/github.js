@@ -29,7 +29,7 @@ const GhContext = {
     pull_requests: [], // { id, number, title, state, html_url, draft, created_at, closed_at, merged_at, matching, author, repository, reviews }
 
     /* Filter's name and status */
-    filters: [],
+    filters: {},
 
     toggleFilter: async function (_type, _value) {
         let active = this.filters[_type + "-" + _value];
@@ -303,6 +303,8 @@ const GhContext = {
     },
 
     storeInLocalStorage: async function () {
+        let fromAssociative = (assArr)=>({...assArr})
+
         // The user informaiton is not store in the storage
         localStorage.setItem('gh_context_version', this.version);
         localStorage.setItem('gh_context_last_check', this.lastCheck.getTime());
@@ -311,9 +313,16 @@ const GhContext = {
         localStorage.setItem('gh_context_organizations', JSON.stringify(this.organisations));
         localStorage.setItem('gh_context_repositories', JSON.stringify(this.repositories));
         localStorage.setItem('gh_context_pull_requests', JSON.stringify(this.pull_requests));
+        localStorage.setItem('gh_context_filters', JSON.stringify(fromAssociative(this.filters)));
     },
 
     reloadFromLocalStorage: async function () {
+        let toAssociative = (keys, values) =>
+            values.reduce((acc, cv) => {
+                acc[acc.shift()] = cv
+                return acc;
+            }, keys);
+
         try {
             let version = localStorage.getItem('gh_context_version');
             if (version !== this.version) {
@@ -334,6 +343,8 @@ const GhContext = {
             this.organisations = JSON.parse(localStorage.getItem('gh_context_organizations') ?? "[]");
             this.repositories = JSON.parse(localStorage.getItem('gh_context_repositories') ?? "[]");
             this.pull_requests = JSON.parse(localStorage.getItem('gh_context_pull_requests') ?? "[]");
+            let filters = JSON.parse(localStorage.getItem('gh_context_filters') ?? "{}");
+            this.filters = toAssociative(Object.keys(filters) , Object.values(filters));
 
             // Retrigger events to update the view
             window.document.dispatchEvent(new CustomEvent('gh_organizations', {
@@ -351,6 +362,16 @@ const GhContext = {
                 }));
             }
             window.document.dispatchEvent(new CustomEvent('gh_pull_requests_refreshed', {detail: {last_check: this.lastCheck}}));
+            for (let filter in this.filters) {
+                let indexOf = filter.indexOf("-");
+                window.document.dispatchEvent(new CustomEvent('gh_filter_toggle', {
+                    detail: {
+                        type: filter.substring(0, indexOf),
+                        value: filter.substring(indexOf + 1),
+                        active: this.filters[filter]
+                    }
+                }));
+            }
 
             await dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString());
 
