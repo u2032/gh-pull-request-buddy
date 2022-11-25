@@ -15,8 +15,8 @@ function onClickFilter(e) {
     if (!(button instanceof HTMLButtonElement)) {
         button = e.target.parentNode;
     }
-    const type = button.getAttribute("data-filter");
-    const value = button.getAttribute("data-filter-value");
+    const type = button.dataset.filter;
+    const value = button.dataset.filter_value;
     GhContext.toggleFilter(type, value);
 }
 
@@ -62,13 +62,13 @@ function applyFilters() {
     pulls.forEach((el) => {
         let mustBeDisplayed = true;
         filterTypes.forEach(type => {
-            const value = el.getAttribute("data-filter-" + type);
+            const value = el.dataset["filter_" + type];
             if (false === GhContext.isFilterActive(type, value)) {
                 mustBeDisplayed = false;
             }
         });
 
-        if (el.getAttribute("data-draft") != null) {
+        if (el.dataset.draft != null) {
             mustBeDisplayed = false;
         }
 
@@ -140,12 +140,12 @@ window.document.addEventListener("gh_pull_request",
             // Put this node visible, only if the owner is selected, and not draft
             instance.classList.remove("w3-hide");
         }
-        instance.setAttribute("data-created", new Date(pr.created_at).getTime())
-        instance.setAttribute("data-last-check", lastCheck.getTime())
-        instance.setAttribute("data-filter-organization", owner.login)
-        instance.setAttribute("data-filter-matching", matching)
+        instance.dataset.created = new Date(pr.created_at).getTime().toString();
+        instance.dataset.last_check = lastCheck.getTime().toString();
+        instance.dataset.filter_organization = owner.login;
+        instance.dataset.filter_matching = matching;
         if (pr.draft) {
-            instance.setAttribute("data-draft", "true");
+            instance.dataset.draft = true;
         }
 
         instance.addEventListener("click", function () {
@@ -241,8 +241,8 @@ window.document.addEventListener("gh_organizations",
         if (instance === null) {
             instance = template.cloneNode(true);
             instance.id = "filter-organization-" + user.login;
-            instance.setAttribute("data-filter", "organization");
-            instance.setAttribute("data-filter-value", user.login);
+            instance.dataset.filter = "organization";
+            instance.dataset.filter_value = user.login;
             instance.classList.add("filter-organization-instance");
             instance.classList.remove("w3-hide");
             instance.addEventListener('click', onClickFilter);
@@ -260,8 +260,8 @@ window.document.addEventListener("gh_organizations",
             if (instance === null) {
                 instance = template.cloneNode(true);
                 instance.id = "filter-organization-" + org.login;
-                instance.setAttribute("data-filter", "organization");
-                instance.setAttribute("data-filter-value", org.login);
+                instance.dataset.filter ="organization";
+                instance.dataset.filter_value = org.login;
                 instance.classList.add("filter-organization-instance");
                 instance.classList.remove("w3-hide");
 
@@ -286,7 +286,7 @@ window.document.addEventListener("gh_pull_requests_refreshed",
         const parent = document.getElementById("dashboard");
         const pulls = parent.querySelectorAll(".pull-request-instance");
         pulls.forEach(el => {
-            const elLastCheck = new Date(parseInt(el.getAttribute("data-last-check")));
+            const elLastCheck = new Date(parseInt(el.dataset.last_check));
             if (elLastCheck < lastCheck) {
                 el.remove();
             }
@@ -301,7 +301,7 @@ window.document.addEventListener("gh_filter_toggle",
         const type = e.detail.type;
         const value = e.detail.value;
         const active = e.detail.active;
-        const el = document.querySelector("button[data-filter=" + type + "][data-filter-value=" + value + "]")
+        const el = document.querySelector("button[data-filter=" + type + "][data-filter_value=" + value + "]")
         if (active) {
             el.classList.remove("w3-disabled")
         } else {
