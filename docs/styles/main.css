@@ -9,6 +9,14 @@ body {
     background-blend-mode: luminosity;
 }
 
+#dashboard-loading {
+    min-height: 400px;
+}
+
+#no-pull-request {
+    min-height: 400px;
+}
+
 .italic {
     font-style: italic;
 }

@@ -45,7 +45,6 @@ function dashboard_step() {
     document.getElementById("header-user").classList.remove("w3-hide");
     setTimeout(async function () {
         await GhContext.reloadFromLocalStorage();
-        await GhContext.checkTeams();
         await GhContext.checkOrganizations();
         await GhContext.refreshPullRequests();
         await GhContext.startScheduler();
@@ -120,98 +119,107 @@ window.document.addEventListener("gh_connection",
     }, false);
 
 
-window.document.addEventListener("gh_pull_request",
+window.document.addEventListener("gh_pull_requests",
     (e) => {
-        const pr = e.detail.pull_request;
-        const lastCheck = e.detail.last_check;
-        const owner = pr.repository.owner;
-        const matching = pr.matching;
+        const parent = document.getElementById("dashboard");
 
-        // Disable loading as soon as we receive a first pull request
-        document.getElementById("dashboard-loading").classList.add("w3-hide");
+        const lastCheck = e.detail.last_check
+        const pullRequests = e.detail.pull_requests
+        for (let pr of pullRequests) {
+            const owner = pr.repository.owner;
+            const matching = pr.matching;
 
-        // Display the pull request
-        const template = document.getElementById("pull-request-template");
+            // Disable loading as soon as we receive a first pull request
+            document.getElementById("dashboard-loading").classList.add("w3-hide");
 
-        const instance = template.cloneNode(true);
-        instance.id = "pull-request-" + pr.id;
-        instance.classList.add("pull-request-instance");
-        if (!pr.draft && isOrganizationActive(owner.login) && isMatchingActive(matching)) {
-            // Put this node visible, only if the owner is selected, and not draft
-            instance.classList.remove("w3-hide");
-        }
-        instance.dataset.created = new Date(pr.created_at).getTime().toString();
-        instance.dataset.last_check = lastCheck.getTime().toString();
-        instance.dataset.filter_organization = owner.login;
-        instance.dataset.filter_matching = matching;
-        if (pr.draft) {
-            instance.dataset.draft = true;
-        }
+            // Display the pull request
+            const template = document.getElementById("pull-request-template");
 
-        instance.addEventListener("click", function () {
-            window.open(pr.html_url, '_blank');
-        });
-
-        const prAuthor = instance.querySelector(".pull-request-author");
-        prAuthor.src = pr.author.avatar_url;
-        prAuthor.title = prAuthor.alt = pr.author.login;
-
-        const prTitle = instance.querySelector(".pull-request-title");
-        prTitle.innerText = pr.title;
-
-        const prNumber = instance.querySelector(".pull-request-number");
-        prNumber.innerText = "#" + pr.number;
-
-        const prRepo = instance.querySelector(".pull-request-repo");
-        prRepo.innerText = pr.repository.full_name;
-
-        const prOwner = instance.querySelector(".pull-request-repo-owner");
-        prOwner.src = pr.repository.owner.avatar_url;
-        prOwner.title = prAuthor.alt = pr.repository.owner.login;
-
-        const prCreatedAt = instance.querySelector(".pull-request-created-at");
-        prCreatedAt.innerText = new Date(pr.created_at).toLocaleString();
-
-        const prReviewList = instance.querySelector(".pull-request-review-list");
-        const prReviewTemplate = prReviewList.querySelector(".pull-request-review-template");
-        for (let review of pr.reviews) {
-            const prReviewInstance = prReviewTemplate.cloneNode(true);
-            prReviewInstance.classList.replace("w3-hide", "w3-show-inline-block");
-
-            const prReviewName = prReviewInstance.querySelector(".pull-request-review-name");
-            prReviewName.innerText = "@" + (review.login ?? review.team);
-
-            const prReviewIcon = prReviewInstance.querySelector(".pull-request-review-icon");
-            prReviewIcon.title = review.state;
-            if (review.state === "APPROVED") {
-                prReviewIcon.classList.add("fa-solid", "fa-circle-check", "w3-text-green");
-            } else if (review.state === "CHANGES_REQUESTED") {
-                prReviewIcon.classList.add("fa-solid", "fa-square-xmark", "w3-text-red");
-            } else if (review.state === "PENDING" || review.state === "COMMENTED") {
-                prReviewIcon.classList.add("fa-solid", "fa-hourglass-half", "w3-text-gray");
-                prReviewName.classList.add("w3-text-gray");
-            } else {
-                prReviewIcon.classList.add("fa-solid", "fa-question", "w3-text-gray");
-                prReviewName.classList.add("w3-text-gray");
+            const instance = template.cloneNode(true);
+            instance.id = "pull-request-" + pr.id;
+            instance.classList.add("pull-request-instance");
+            if (!pr.draft && isOrganizationActive(owner.login) && isMatchingActive(matching)) {
+                // Put this node visible, only if the owner is selected, and not draft
+                instance.classList.remove("w3-hide");
+            }
+            instance.dataset.created = new Date(pr.createdAt).getTime().toString();
+            instance.dataset.last_check = lastCheck.getTime().toString();
+            instance.dataset.filter_organization = owner.login;
+            instance.dataset.filter_matching = matching;
+            if (pr.draft) {
+                instance.dataset.draft = true;
             }
 
-            prReviewList.appendChild(prReviewInstance)
-        }
+            instance.addEventListener("click", function () {
+                window.open(pr.url, '_blank');
+            });
 
-        const matchingIcon = instance.querySelector("div[data-matching=" + matching + "]");
-        if (matchingIcon !== null) {
-            matchingIcon.classList.remove("w3-hide")
-        }
+            const prAuthor = instance.querySelector(".pull-request-author");
+            prAuthor.src = pr.author.avatarUrl;
+            prAuthor.title = prAuthor.alt = pr.author.login;
 
-        // Remove the existing instance with the same ID
-        const previous = document.getElementById("pull-request-" + pr.id);
-        if (previous !== null) {
-            previous.remove();
-        }
+            const prTitle = instance.querySelector(".pull-request-title");
+            prTitle.innerText = pr.title;
 
-        // Add the instance to the parent
-        const parent = document.getElementById("dashboard");
-        parent.appendChild(instance);
+            const prNumber = instance.querySelector(".pull-request-number");
+            prNumber.innerText = "#" + pr.number;
+
+            const prRepo = instance.querySelector(".pull-request-repo");
+            prRepo.innerText = pr.repository.fullname;
+
+            const prOwner = instance.querySelector(".pull-request-repo-owner");
+            prOwner.src = pr.repository.owner.avatarUrl;
+            prOwner.title = prAuthor.alt = pr.repository.owner.login;
+
+            const prCreatedAt = instance.querySelector(".pull-request-created-at");
+            prCreatedAt.innerText = new Date(pr.createdAt).toLocaleString();
+
+            const prReviewList = instance.querySelector(".pull-request-review-list");
+            const prReviewTemplate = prReviewList.querySelector(".pull-request-review-template");
+            for (let review of pr.reviews) {
+                const prReviewInstance = prReviewTemplate.cloneNode(true);
+                prReviewInstance.classList.replace("w3-hide", "w3-show-inline-block");
+
+                const prReviewName = prReviewInstance.querySelector(".pull-request-review-name");
+                prReviewName.innerText = "@" + (review.login ?? review.name);
+                if (review.name != null) {
+                    prReviewName.title = review.name
+                }
+
+                const prReviewIcon = prReviewInstance.querySelector(".pull-request-review-icon");
+                prReviewIcon.title = review.state;
+                if (review.state === "APPROVED") {
+                    prReviewIcon.classList.add("fa-solid", "fa-circle-check", "w3-text-green");
+                } else if (review.state === "CHANGES_REQUESTED") {
+                    prReviewIcon.classList.add("fa-solid", "fa-square-xmark", "w3-text-red");
+                } else if (review.state === "PENDING") {
+                    prReviewIcon.classList.add("fa-solid", "fa-hourglass-half", "w3-text-gray");
+                    prReviewName.classList.add("w3-text-gray");
+                } else if (review.state === "REQUESTED" || review.state === "COMMENTED") {
+                    prReviewIcon.classList.add("fa-solid", "fa-minus", "w3-text-gray", "w3-tiny");
+                    prReviewName.classList.add("w3-text--gray");
+                } else {
+                    prReviewIcon.classList.add("fa-solid", "fa-question", "w3-text-gray");
+                    prReviewName.classList.add("w3-text-gray");
+                }
+
+                prReviewList.appendChild(prReviewInstance)
+            }
+
+            const matchingIcon = instance.querySelector("div[data-matching=" + matching + "]");
+            if (matchingIcon !== null) {
+                matchingIcon.classList.remove("w3-hide")
+            }
+
+            // Remove the existing instance with the same ID
+            const previous = document.getElementById("pull-request-" + pr.id);
+            if (previous !== null) {
+                previous.remove();
+            }
+
+            // Add the instance to the parent
+            parent.appendChild(instance);
+        }
 
         // Sort by creation date
         let allInstances = Array.from(parent.querySelectorAll(".pull-request-instance"));
@@ -223,8 +231,19 @@ window.document.addEventListener("gh_pull_request",
         allInstances.forEach(function (node) {
             node.parentNode.append(node);
         });
+
         // Reapply filters
         this.applyFilters();
+
+        // Remove all pull requests which were not been updated (probably merged or closed)
+        const pulls = parent.querySelectorAll(".pull-request-instance");
+        pulls.forEach(el => {
+            const elLastCheck = new Date(parseInt(el.dataset.last_check));
+            if (elLastCheck < lastCheck) {
+                el.remove();
+            }
+        });
+        checkNoPullRequest();
 
     }, false);
 
@@ -248,7 +267,7 @@ window.document.addEventListener("gh_organizations",
             instance.addEventListener('click', onClickFilter);
 
             let img = instance.querySelector("img");
-            img.src = user.avatar_url;
+            img.src = user.avatarUrl;
 
             let txt = instance.querySelector("span");
             txt.innerText = "@" + user.login;
@@ -260,13 +279,13 @@ window.document.addEventListener("gh_organizations",
             if (instance === null) {
                 instance = template.cloneNode(true);
                 instance.id = "filter-organization-" + org.login;
-                instance.dataset.filter ="organization";
+                instance.dataset.filter = "organization";
                 instance.dataset.filter_value = org.login;
                 instance.classList.add("filter-organization-instance");
                 instance.classList.remove("w3-hide");
 
                 let img = instance.querySelector("img");
-                img.src = org.avatar_url;
+                img.src = org.avatarUrl;
 
                 let txt = instance.querySelector("span");
                 txt.innerText = "@" + org.login;
@@ -277,24 +296,6 @@ window.document.addEventListener("gh_organizations",
         }
 
     }, false);
-
-window.document.addEventListener("gh_pull_requests_refreshed",
-    (e) => {
-        const lastCheck = e.detail.last_check;
-
-        // Remove all pull requests which were not been updated (probably merged or closed)
-        const parent = document.getElementById("dashboard");
-        const pulls = parent.querySelectorAll(".pull-request-instance");
-        pulls.forEach(el => {
-            const elLastCheck = new Date(parseInt(el.dataset.last_check));
-            if (elLastCheck < lastCheck) {
-                el.remove();
-            }
-        });
-        checkNoPullRequest();
-
-    }, false);
-
 
 window.document.addEventListener("gh_filter_toggle",
     (e) => {

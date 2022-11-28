@@ -38,11 +38,17 @@
                     This page is intended to display a dashboard of the pending pull requests relevant for you.
                     To do that, this page needs to be able to connect to the GitHub API throught a personnal GitHub
                     token with the read access to the respositories you want to be able to track.
-                    If you have none, you can generate a new GitHub Token from [<a
+                    If you have none, you can generate a new <strong>Classic GitHub Token</strong> from [<a
                         href="https://github.com/settings/tokens" target="_blank">your account's settings</a>].
                 </p>
+                <p>Please make sure that your token has the following rights:
+                <ul>
+                    <li><strong>repo:*</strong> to be able to read private repositories</li>
+                    <li><strong>read:org</strong> to be able to read your user's organization data</li>
+                </ul>
+                </p>
                 <p>
-                    This token stays client's side in your browser and it's not send to a server. Actually, the whole
+                    This token stays client's side in your browser and is not sent to a server. Actually, the whole
                     content of this page and dashboard is generated client's side and doesn't male any call to a service
                     except GitHub itself to retrieve the information.
                 </p>
@@ -89,12 +95,17 @@
             </div>
         </div>
 
-        <div id="dashboard-loading" class="w3-center w3-animate-fading w3-section w3-margin-top">
-            <h1>... LOADING ...</h1>
+        <div id="dashboard-loading" class="w3-display-container w3-center w3-animate-fading w3-section w3-margin-top">
+            <div class="w3-display-middle">
+                <h1>... LOADING ...</h1>
+                <h3>It can take a few minutes</h3>
+            </div>
         </div>
 
-        <div id="no-pull-request" class="w3-center w3-hide w3-section w3-margin-top">
-            <h1>... No Pull Request found ...</h1>
+        <div id="no-pull-request" class="w3-display-container w3-center w3-hide w3-section w3-margin-top">
+            <div class="w3-display-middle">
+                <h1>... No Pull Request found ...</h1>
+            </div>
         </div>
 
         <div id="pull-request-template"
