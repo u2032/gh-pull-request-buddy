@@ -195,7 +195,7 @@ window.document.addEventListener("gh_pull_requests",
                 } else if (review.state === "PENDING") {
                     prReviewIcon.classList.add("fa-solid", "fa-hourglass-half", "w3-text-gray");
                     prReviewName.classList.add("w3-text-gray");
-                } else if (review.state === "REQUESTED" || review.state === "COMMENTED") {
+                } else if (review.state === "REQUESTED") {
                     prReviewIcon.classList.add("fa-solid", "fa-minus", "w3-text-gray", "w3-tiny");
                     prReviewName.classList.add("w3-text-gray");
                 } else {

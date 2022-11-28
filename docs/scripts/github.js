@@ -110,7 +110,7 @@ const GhClient = {
     },
 
     getPullRequestInfo: async function (_token, _repository) {
-        const response = await this.request(_token, `{ node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(first: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } reviews(first:100, states:[APPROVED,CHANGES_REQUESTED]) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(first:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
+        const response = await this.request(_token, `{ node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
         if (response === false) {
             return false;
         }
@@ -134,7 +134,7 @@ const GhClient = {
                     state: "REQUESTED",
                     asCodeOwner: ireview.asCodeOwner
                 }
-                reviews = reviews.filter(r => r.id !== review.id) // Keep only the last review per user
+                reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
                 reviews.push(review);
             }
 
@@ -143,16 +143,30 @@ const GhClient = {
                 if (ireview.author === null) {
                     continue;
                 }
+                let status = ireview.state
+                if (status === "COMMENTED" || status === "DISMISSED") {
+                    // Fallback to REQUESTED if commented or dismissed
+                    status = "REQUESTED"
+                }
+
                 let review = {
                     id: ireview.author.id,
                     login: ireview.author.login,
                     name: ireview.author.name,
                     avatarUrl: ireview.author.avatarUrl,
-                    state: ireview.state,
+                    state: status,
                     asCodeOwner: ireview.asCodeOwner
                 }
-                reviews = reviews.filter(r => r.id !== review.id) // Keep only the last review per user
-                reviews.push(review);
+                let previousReview = reviews.find(r => r.id === review.id);
+                if (previousReview === undefined) {
+                    reviews.push(review);
+                    continue;
+                }
+                if ((review.state === "PENDING" || review.state === "REQUESTED") && (previousReview.state === "APPROVED" || previousReview.state === "CHANGES_REQUESTED")) {
+                    // If the last review is still in pending or requested, keep the last in approved or changes_requested status instead
+                    reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
+                    reviews.push(review);
+                }
             }
 
             let pullRequest = {
