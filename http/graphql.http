@@ -50,5 +50,16 @@ Content-Type: application/json
 Accept: application/vnd.github+json
 X-Github-Next-Global-ID: 1
 
-{"query": "{ rateLimit { cost } node(id: \"R_kgDOBo4JRQ\") { id ... on Repository { name pullRequests(first: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl } reviews(first:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(first:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }"}
+{"query": "{ rateLimit { cost } node(id: \"R_kgDOBo4JRQ\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }"}
+
+
+### get pull requests info with onbehalfof -- cost 102
+
+POST https://api.github.com/graphql
+Authorization: bearer {{gh_token}}
+Content-Type: application/json
+Accept: application/vnd.github+json
+X-Github-Next-Global-ID: 1
+
+{"query": "{ rateLimit { cost } node(id: \"R_kgDOBo4JRQ\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } reviews(last:100) { nodes { id state onBehalfOf(first:10) { nodes { id name } } author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }"}
 

@@ -1,3 +1,5 @@
+const GH_SCHEDULER_DELAY = 1000 * 60 * 10; // 10 minutes
+
 /**
  * The GhClient implements the requests made to the GitHub GraphQL API
  */
@@ -143,6 +145,11 @@ const GhClient = {
                 if (ireview.author === null) {
                     continue;
                 }
+                if (author.id === ireview.author.id) {
+                    // Ignore this review if the review is made by the PR's author (usually a comment)
+                    continue;
+                }
+
                 let status = ireview.state
                 if (status === "COMMENTED" || status === "DISMISSED") {
                     // Fallback to REQUESTED if commented or dismissed
@@ -290,7 +297,7 @@ const GhContext = {
                     // An update is already running, do nothing
                     return;
                 }
-                let nextCheck = new Date(GhContext.lastCheck.getTime() + (1000 * 60 * 10)) // Update each 10 min
+                let nextCheck = new Date(GhContext.lastCheck.getTime() + GH_SCHEDULER_DELAY) // Update each 10 min
                 if (new Date() > nextCheck) {
                     try {
                         GhContext.refreshPullRequests();
