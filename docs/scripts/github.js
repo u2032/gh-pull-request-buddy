@@ -1,4 +1,4 @@
-const GH_SCHEDULER_DELAY = 1000 * 60 * 10; // 10 minutes
+const GH_SCHEDULER_DELAY = 1000 * 60 * 8; // 8 minutes
 
 /**
  * The GhClient implements the requests made to the GitHub GraphQL API
@@ -119,7 +119,7 @@ const GhClient = {
     },
 
     getPullRequestInfo: async function (_token, _repository, _includesOnBehalf) {
-        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } reviews(last:100) { nodes { id state ${_includesOnBehalf ? "onBehalfOf(first:10) { nodes { id name } }" : ""} author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
+        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state ${_includesOnBehalf ? "onBehalfOf(first:10) { nodes { id name } }" : ""} author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
         if (response === false) {
             return false;
         }
@@ -197,6 +197,18 @@ const GhClient = {
                 }
             }
 
+            let assignees = []
+            // Add request assignees
+            for (let iassignee of ipr.assignees.nodes) {
+                let assignee = {
+                    id: iassignee.id,
+                    login: iassignee.login,
+                    name: iassignee.name,
+                    avatarUrl: iassignee.avatarUrl
+                }
+                assignees.push(assignee);
+            }
+
             let pullRequest = {
                 id: ipr.id,
                 title: ipr.title,
@@ -207,7 +219,8 @@ const GhClient = {
                 url: ipr.url,
                 author: author,
                 repository: _repository,
-                reviews: reviews
+                reviews: reviews,
+                assignees: assignees
             }
             pullRequests.push(pullRequest)
         }
@@ -423,6 +436,13 @@ const GhContext = {
                     }
                     // Check if a review request is pending for the user
                     if (ireview.id === this.user.id) {
+                        matching = "direct";
+                    }
+                }
+
+                // Check assignee
+                for (let iassignee of ipr.assignees) {
+                    if (iassignee.id === this.user.id) {
                         matching = "direct";
                     }
                 }
