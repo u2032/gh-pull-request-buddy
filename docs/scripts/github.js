@@ -331,14 +331,14 @@ const GhContext = {
     },
 
     startScheduler: function () {
-        setInterval(function () {
+        setInterval(async function () {
                 if (GhContext.running) {
                     // An update is already running, do nothing
                     return;
                 }
                 if (GhContext.lastCheck === null || new Date() > new Date(GhContext.lastCheck.getTime() + GH_SCHEDULER_DELAY)) {
                     try {
-                        GhContext.refreshPullRequests();
+                        await GhContext.refreshPullRequests();
                     } catch (_e) {
                         console.error("Error caught during refreshing data: " + _e)
                     }
@@ -349,7 +349,7 @@ const GhContext = {
     },
 
     checkOrganizations: async function () {
-        dispatchStatusMessage("Retrieving user's orgs & teams...");
+        await dispatchStatusMessage("Retrieving user's orgs & teams...");
         const orgs = await GhClient.getOrganizationInfo(this.gh_token, this.user.login)
         if (false !== orgs) {
             this.organisations = [];
@@ -371,10 +371,9 @@ const GhContext = {
 
     checkRepositories: async function () {
         const now = new Date()
-        dispatchStatusMessage("Fetching Repositories...");
+        await dispatchStatusMessage("Fetching Repositories...");
 
-        const repositories = await GhClient.getRepositoriesInfo(this.gh_token);
-        this.repositories = repositories;
+        this.repositories = await GhClient.getRepositoriesInfo(this.gh_token);
         this.repositories.sort((a, b) => {
             if (a.fullname < b.fullname) {
                 return -1;
@@ -420,23 +419,29 @@ const GhContext = {
         let i = 0;
         for (let irepo of repoToCheck) {
             i = i + 1;
-            dispatchStatusMessage(`Checking repository: ${irepo.fullname} [${i} of ${repoToCheck.length}]`);
+            await dispatchStatusMessage(`Checking repository: ${irepo.fullname} [${i} of ${repoToCheck.length}]`);
 
             const openedPullRequests = await GhClient.getPullRequestInfo(this.gh_token, irepo, _includesOnBehalf);
 
             for (let ipr of openedPullRequests) {
                 let previous = this.pull_requests.find(o => o.id === ipr.id);
                 let matching = null;
-                for (let ireview of ipr.reviews) {
-                    // Check if a review request is pending for a team of the user
-                    if (ireview.state === "TEAM") {
-                        if (this.team_ids.includes(ireview.id)) {
-                            matching = "team";
+
+                if (previous !== undefined && previous.matching === "team") {
+                    // If this PR previously matched by TEAM, keep that value
+                    matching = previous.matching;
+                } else {
+                    for (let ireview of ipr.reviews) {
+                        // Check if a review request is pending for a team of the user
+                        if (ireview.state === "TEAM") {
+                            if (this.team_ids.includes(ireview.id)) {
+                                matching = "team";
+                            }
                         }
-                    }
-                    // Check if a review request is pending for the user
-                    if (ireview.id === this.user.id) {
-                        matching = "direct";
+                        // Check if a review request is pending for the user
+                        if (ireview.id === this.user.id) {
+                            matching = "direct";
+                        }
                     }
                 }
 
@@ -507,7 +512,7 @@ const GhContext = {
             }
         }
         this.lastCheck = now
-        dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString())
+        await dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString())
         window.document.dispatchEvent(new CustomEvent('gh_pull_requests', {
             detail: {
                 pull_requests: this.pull_requests,
