@@ -268,19 +268,14 @@ const GhContext = {
     /* Offset used for the onbehalf feature which is costly */
     onBehalfOffset: 0,
 
-    toggleFilter: async function (_type, _value) {
-        let active = this.filters[_type + "-" + _value];
-        if (active === undefined) {
-            active = this.filters[_type + "-" + _value] = false;
-        } else {
-            active = this.filters[_type + "-" + _value] = !this.filters[_type + "-" + _value];
-        }
-        console.debug("Toggling filter: " + _type + "-" + _value + " => " + active);
+    toggleFilter: async function (_type, _value, _state) {
+        this.filters[_type + "-" + _value] = _state;
+        console.debug("Toggling filter: " + _type + "-" + _value + " => " + _state);
         window.document.dispatchEvent(new CustomEvent('gh_filter_toggle', {
             detail: {
                 type: _type,
                 value: _value,
-                active: active
+                active: _state
             }
         }));
         await this.storeInLocalStorage()

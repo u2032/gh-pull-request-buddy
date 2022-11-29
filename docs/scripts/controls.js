@@ -5,7 +5,7 @@ const filterTypes = ["matching", "organization"]
 
 function init() {
     const form = document.getElementById("connection-form");
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', function (e) {
         e.preventDefault();
         connection_step();
     });
@@ -23,7 +23,22 @@ function onClickFilter(e) {
     }
     const type = button.dataset.filter;
     const value = button.dataset.filter_value;
-    GhContext.toggleFilter(type, value);
+
+    const allElements = document.querySelectorAll(`button[data-filter=${type}][data-filter_value]`);
+    if (value === "all") {
+        // Enable all filter
+        for (let el of allElements) {
+            GhContext.toggleFilter(type, el.dataset.filter_value, true);
+        }
+    } else {
+        GhContext.toggleFilter(type, value, true);
+        // disable all other filters
+        for (let el of allElements) {
+            if (value !== el.dataset.filter_value) {
+                GhContext.toggleFilter(type, el.dataset.filter_value, false);
+            }
+        }
+    }
 }
 
 /* VIEW MANAGEMENT */
@@ -270,6 +285,22 @@ window.document.addEventListener("gh_organizations",
         const template = document.getElementById("filter-organization-template");
         const parent = document.getElementById("filter-organization-list");
 
+        // Add a first item for ALL feature
+        let instanceAll = document.getElementById("filter-organization-all");
+        if (instanceAll === null) {
+            instanceAll = template.cloneNode(true);
+            instanceAll.id = "filter-organization-all";
+            instanceAll.dataset.filter = "organization";
+            instanceAll.dataset.filter_value = "all";
+            instanceAll.classList.add("filter-organization-instance");
+            instanceAll.classList.remove("w3-hide");
+            instanceAll.addEventListener('click', onClickFilter);
+            instanceAll.querySelector("img").classList.add("w3-hide");
+            let txt = instanceAll.querySelector("span");
+            txt.innerText = "ALL";
+        }
+        parent.prepend(instanceAll);
+
         // Add a first item for the user itself
         let instance = document.getElementById("filter-organization-" + user.login);
         if (instance === null) {
@@ -287,7 +318,7 @@ window.document.addEventListener("gh_organizations",
             let txt = instance.querySelector("span");
             txt.innerText = "@" + user.login;
         }
-        parent.appendChild(instance);
+        parent.prepend(instance);
 
         for (const org of orgs) {
             let instance = document.getElementById("filter-organization-" + org.login);
@@ -307,7 +338,7 @@ window.document.addEventListener("gh_organizations",
 
                 instance.addEventListener('click', onClickFilter);
             }
-            parent.appendChild(instance);
+            parent.prepend(instance);
         }
 
     });

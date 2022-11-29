@@ -4,16 +4,20 @@
     <title>Pull Requests Buddy</title>
 
     <meta http-equiv='Content-Security-Policy'
-          CONTENT="default-src 'self'; script-src 'self'; style-src 'self' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' avatars.githubusercontent.com; connect-src 'self' api.github.com">
+          content="default-src 'self'; script-src 'self'; style-src 'self' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' avatars.githubusercontent.com; connect-src 'self' api.github.com">
 
-    <link rel="stylesheet" href="./styles/main.css" integrity="sha384-styxoPXCH6nlQYyoZpPs+0/RIPgdi9GYfcO8b30n/EdTQ3f2/jZwWgqduI5FBx9b">
-    <link rel="stylesheet" href="./styles/w3.css" integrity="sha384-D/ks+FHpVJ2hDDjKLeLyhPMM2X+ECcQTDIDN/mMRz2P4+7nemyPpeyjpTTLt+2zy">
-    <link rel="stylesheet" href="./styles/fontawesome.min.css" integrity="sha384-QYIZto+st3yW+o8+5OHfT6S482Zsvz2WfOzpFSXMF9zqeLcFV0/wlZpMtyFcZALm">
-    <link rel="stylesheet" href="./styles/solid.min.css" integrity="sha384-XA4GNh8NX8EYkM7X7NCXQzS7tTEzSelPJ2gF6s+KKgR7Fcep3WAa9iKAxyYEQBqh">
+    <link rel="stylesheet" href="./styles/main.css"
+          integrity="sha384-2nUYTZh541mLO+JU/7+HTJ4/mZlDSAb9pwnIU8scF+Vb1knCTdBVOlLqRtk+CGfY">
+    <link rel="stylesheet" href="./styles/w3.css"
+          integrity="sha384-D/ks+FHpVJ2hDDjKLeLyhPMM2X+ECcQTDIDN/mMRz2P4+7nemyPpeyjpTTLt+2zy">
+    <link rel="stylesheet" href="./styles/fontawesome.min.css"
+          integrity="sha384-QYIZto+st3yW+o8+5OHfT6S482Zsvz2WfOzpFSXMF9zqeLcFV0/wlZpMtyFcZALm">
+    <link rel="stylesheet" href="./styles/solid.min.css"
+          integrity="sha384-XA4GNh8NX8EYkM7X7NCXQzS7tTEzSelPJ2gF6s+KKgR7Fcep3WAa9iKAxyYEQBqh">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
 
-    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-ep0hxgs5putU45q8mUVqAevIejxSbUcSvXAxupJRkkZaSb8P1rsyFASVJbSz+aTG" defer></script>
-    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-q7MguKetpSUnq8C6PTTkM3Uz88yRmza1cegbzDt0AYYNoV18BfunecuKVrjqpExz" defer></script>
+    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-h1acJr1fAELUSOVWsm0vhc53glFobYEmxKu/za/AdvYnnFiuMIUd6qm5IaREYbmN" defer></script>
+    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-rB2dTGRPbyL6Bes4rQWASL0EcNQY1MFKLxyzrdM8XQIGg8bdd28AH5nzXpb0Z+yl" defer></script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png">
@@ -80,26 +84,37 @@
 
     <div id="dashboard" class="w3-hide">
 
-        <div>
-            <div id="matching-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
-                <button class="w3-btn w3-border w3-round w3-margin-left w3-pale-blue pointable" data-filter="matching"
-                        data-filter_value="direct">
-                    <span>DIRECT</span>
-                    <i class="fa-sharp fa-solid fa-bullseye w3-text-red"></i>
-                </button>
-                <button class="w3-btn w3-border w3-round w3-margin-left w3-pale-blue pointable" data-filter="matching"
-                        data-filter_value="team">
-                    <span>TEAM</span>
-                    <i class="fa-solid fa-users w3-text-purple"></i>
-                </button>
+        <div class="w3-row-padding">
+            <div class="w3-right-align w3-small w3-col s12 m12 l9">
+                <div id="filter-organization-list" class="w3-bar w3-padding-small">
+                    <button id="filter-organization-template"
+                            class="w3-bar-item w3-right w3-button w3-border w3-border-black w3-round w3-pale-blue w3-hover-light-blue pointable w3-hide">
+                        <img src="" width="24" height="24">
+                        <span></span>
+                    </button>
+                </div>
             </div>
 
-            <div id="filter-organization-list" class="w3-container w3-right-align w3-small w3-margin-bottom">
-                <button id="filter-organization-template"
-                        class="w3-btn w3-border w3-round w3-margin-left w3-pale-blue pointable w3-hide">
-                    <img src="" width="24" height="24">
-                    <span></span>
-                </button>
+            <div class="w3-right-align w3-small w3-col s12 m12 l3">
+                <div id="matching-list" class="w3-bar w3-padding-small">
+                    <button class="w3-bar-item w3-right w3-button w3-border w3-border-black w3-round w3-pale-blue w3-hover-light-blue pointable"
+                            data-filter="matching"
+                            data-filter_value="team">
+                        <span>TEAM</span>
+                        <i class="fa-solid fa-users w3-text-purple"></i>
+                    </button>
+                    <button class="w3-bar-item w3-right w3-button w3-border w3-border-black w3-round w3-pale-blue w3-hover-light-blue pointable"
+                            data-filter="matching"
+                            data-filter_value="direct">
+                        <span>DIRECT</span>
+                        <i class="fa-sharp fa-solid fa-bullseye w3-text-red"></i>
+                    </button>
+                    <button class="w3-bar-item w3-right w3-button w3-border w3-border-black w3-round w3-pale-blue w3-hover-light-blue pointable"
+                            data-filter="matching"
+                            data-filter_value="all">
+                        <span>ALL</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -116,41 +131,43 @@
             </div>
         </div>
 
-        <div id="pull-request-template"
-             class="w3-card-4 w3-padding w3-white w3-section w3-round-small w3-hover-light-blue w3-hide pointable">
-            <div class="w3-row flex">
-                <div class="w3-col s11 m11 l11 flex">
-                    <div class="w3-padding-small">
-                        &nbsp;
-                    </div>
-                    <div>
-                        <div>
-                            <span class="pull-request-title w3-large bold">This is a title</span>
-                            <span class="pull-request-number w3-large w3-text-dark-gray">#1234</span>
+        <div class="w3-padding-top-32">
+            <div id="pull-request-template"
+                 class="w3-card-4 w3-padding w3-white w3-section w3-round-small w3-hover-light-blue w3-hide pointable">
+                <div class="w3-row flex">
+                    <div class="w3-col s11 m11 l11 flex">
+                        <div class="w3-padding-small">
+                            &nbsp;
                         </div>
                         <div>
-                            <img class="pull-request-repo-owner" src="" width="24" height="24"/>
-                            <span class="pull-request-repo">org/repo-name</span>
-                        </div>
-                        <div class="w3-small">
-                            Created: <span class="pull-request-created-at">1985-08-29</span>
-                            by <img class="pull-request-author" src="" title="" alt="" width="20" height="20"/>
-                        </div>
-                        <div class="pull-request-review-list w3-show-inline-block">
-                            <div class="pull-request-review-template w3-hide">
-                                <i class="pull-request-review-icon"></i>
-                                <span class="pull-request-review-name">@u2032</span>
+                            <div>
+                                <span class="pull-request-title w3-large bold">This is a title</span>
+                                <span class="pull-request-number w3-large w3-text-dark-gray">#1234</span>
+                            </div>
+                            <div>
+                                <img class="pull-request-repo-owner" src="" width="24" height="24"/>
+                                <span class="pull-request-repo">org/repo-name</span>
+                            </div>
+                            <div class="w3-small">
+                                Created: <span class="pull-request-created-at">1985-08-29</span>
+                                by <img class="pull-request-author" src="" title="" alt="" width="20" height="20"/>
+                            </div>
+                            <div class="pull-request-review-list w3-show-inline-block">
+                                <div class="pull-request-review-template w3-hide">
+                                    <i class="pull-request-review-icon"></i>
+                                    <span class="pull-request-review-name">@u2032</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="w3-col s1 m1 l1 w3-right-align w3-display-container">
-                    <div class="w3-display-bottomright">
-                        <div class="w3-hide" data-matching="direct">
-                            <i class="fa-solid fa-bullseye w3-text-red" title="DIRECT"></i>
-                        </div>
-                        <div class="w3-hide" data-matching="team">
-                            <i class="fa-solid fa-users w3-text-purple" title="TEAM"></i>
+                    <div class="w3-col s1 m1 l1 w3-right-align w3-display-container">
+                        <div class="w3-display-bottomright">
+                            <div class="w3-hide" data-matching="direct">
+                                <i class="fa-solid fa-bullseye w3-text-red" title="DIRECT"></i>
+                            </div>
+                            <div class="w3-hide" data-matching="team">
+                                <i class="fa-solid fa-users w3-text-purple" title="TEAM"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
