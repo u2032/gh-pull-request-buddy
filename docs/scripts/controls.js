@@ -49,6 +49,7 @@ function dashboard_step() {
         await GhContext.refreshPullRequests();
         await GhContext.startScheduler();
         document.getElementById("dashboard-loading").classList.add("w3-hide");
+        this.checkNoPullRequest();
     }, 500);
     return false;
 }
@@ -89,6 +90,11 @@ function isMatchingActive(_value) {
 }
 
 function checkNoPullRequest() {
+    const loading = document.getElementById("dashboard-loading");
+    if (!loading.classList.contains("w3-hide")) {
+        // loading is ongoing, ignore the no pull request check
+        return;
+    }
     const noPr = document.getElementById("no-pull-request");
     const visibleElements = document.querySelectorAll("div.pull-request-instance:not(.w3-hide)");
     if (visibleElements.length > 0) {
@@ -181,7 +187,7 @@ window.document.addEventListener("gh_pull_requests",
                 prReviewInstance.classList.replace("w3-hide", "w3-show-inline-block");
 
                 const prReviewName = prReviewInstance.querySelector(".pull-request-review-name");
-                prReviewName.innerText = "@" + (review.login ?? review.name);
+                prReviewName.innerText = (review.state === "TEAM" ? review.name : "@" + review.login);
                 if (review.name != null) {
                     prReviewName.title = review.name
                 }
@@ -197,6 +203,9 @@ window.document.addEventListener("gh_pull_requests",
                     prReviewName.classList.add("w3-text-gray");
                 } else if (review.state === "REQUESTED") {
                     prReviewIcon.classList.add("fa-solid", "fa-minus", "w3-text-gray", "w3-tiny");
+                    prReviewName.classList.add("w3-text-gray");
+                } else if (review.state === "TEAM") {
+                    prReviewIcon.classList.add("fa-solid", "fa-users", "w3-text-gray");
                     prReviewName.classList.add("w3-text-gray");
                 } else {
                     prReviewIcon.classList.add("fa-solid", "fa-question", "w3-text-gray");

@@ -5,6 +5,12 @@ const GH_SCHEDULER_DELAY = 1000 * 60 * 10; // 10 minutes
  */
 const GhClient = {
 
+    rateLimit: {
+        remaining: null,
+        resetAt: null,
+        min: 100000,
+    },
+
     /**
      * This method makes a call to the GraphQL GitHub API
      * @param _token
@@ -33,20 +39,21 @@ const GhClient = {
                 console.error("[GH]: " + response.status + " when calling GraphQL with query: " + _query + "\nErrors: " + JSON.stringify(raw.errors));
                 return false;
             }
+
+            if (raw.data.rateLimit !== undefined) {
+                this.rateLimit.remaining = raw.data.rateLimit.remaining
+                this.rateLimit.resetAt = new Date(raw.data.rateLimit.resetAt)
+                if (this.rateLimit.remaining < this.rateLimit.min) {
+                    this.rateLimit.min = this.rateLimit.remaining
+                }
+            }
+
             // console.debug("[GH] Response: " + JSON.stringify(raw.data))
             return raw.data;
         } else {
             console.error("[GH]: " + response.status + " when calling GraphQL with query: " + _query);
             return false;
         }
-    },
-
-    getRateLimit: async function (_token) {
-        let response = await this.request(_token, `{viewer { login } rateLimit { limit cost remaining resetAt }}`);
-        if (response === false) {
-            return false;
-        }
-        return response.rateLimit;
     },
 
     getUserInfo: async function (_token) {
@@ -58,7 +65,7 @@ const GhClient = {
     },
 
     getOrganizationInfo: async function (_token, _userLogin) {
-        let response = await this.request(_token, `{viewer { organizations(first: 100) { nodes { id login name avatarUrl teams(first:100, userLogins: "${_userLogin}") { nodes { id name } }  } } } }`);
+        let response = await this.request(_token, `{ rateLimit { remaining resetAt } viewer { organizations(first: 100) { nodes { id login name avatarUrl teams(first:100, userLogins: "${_userLogin}") { nodes { id name } }  } } } }`);
         if (response === false) {
             return false;
         }
@@ -81,7 +88,7 @@ const GhClient = {
         const repositories = [];
         do {
             console.debug(`Fetching ${repositories.length} +100 repositories...`)
-            response = await this.request(_token, `{ viewer { repositories(first: 100, after: ${cursor === null ? cursor : `\"${cursor}\"`}, affiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR], ownerAffiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) { totalCount pageInfo { hasNextPage endCursor } nodes { id name nameWithOwner pushedAt isArchived isDisabled owner { id login avatarUrl } pullRequests(last: 1, states: OPEN) { nodes { id createdAt updatedAt } } } } } }`)
+            response = await this.request(_token, `{ rateLimit { remaining resetAt } viewer { repositories(first: 100, after: ${cursor === null ? cursor : `\"${cursor}\"`}, affiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR], ownerAffiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) { totalCount pageInfo { hasNextPage endCursor } nodes { id name nameWithOwner pushedAt isArchived isDisabled owner { id login avatarUrl } pullRequests(last: 1, states: OPEN) { nodes { id createdAt updatedAt } } } } } }`)
             cursor = response.viewer.repositories.pageInfo.endCursor
             for (let iorg of response.viewer.repositories.nodes) {
                 if (iorg.isDisabled || iorg.isArchived) {
@@ -111,8 +118,8 @@ const GhClient = {
         return repositories;
     },
 
-    getPullRequestInfo: async function (_token, _repository) {
-        const response = await this.request(_token, `{ node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
+    getPullRequestInfo: async function (_token, _repository, _includesOnBehalf) {
+        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } reviews(last:100) { nodes { id state ${_includesOnBehalf ? "onBehalfOf(first:10) { nodes { id name } }" : ""} author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
         if (response === false) {
             return false;
         }
@@ -133,11 +140,26 @@ const GhClient = {
                     login: ireview.requestedReviewer.login,
                     name: ireview.requestedReviewer.name,
                     avatarUrl: ireview.requestedReviewer.avatarUrl,
-                    state: "REQUESTED",
-                    asCodeOwner: ireview.asCodeOwner
+                    state: ireview.requestedReviewer.login !== undefined ? "REQUESTED" : "TEAM"
                 }
                 reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
                 reviews.push(review);
+            }
+
+            // Add made review on behalf of
+            for (let ireview of ipr.reviews.nodes) {
+                if (ireview.onBehalfOf === undefined) {
+                    break;
+                }
+                for (let iobf of ireview.onBehalfOf.nodes) {
+                    let review = {
+                        id: iobf.id,
+                        name: iobf.name,
+                        state: "TEAM"
+                    }
+                    reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
+                    reviews.push(review);
+                }
             }
 
             // Add made reviews
@@ -161,8 +183,7 @@ const GhClient = {
                     login: ireview.author.login,
                     name: ireview.author.name,
                     avatarUrl: ireview.author.avatarUrl,
-                    state: status,
-                    asCodeOwner: ireview.asCodeOwner
+                    state: status
                 }
                 let previousReview = reviews.find(r => r.id === review.id);
                 if (previousReview === undefined) {
@@ -200,7 +221,7 @@ const GhClient = {
 const GhContext = {
 
     /* Serialization version, useful to invalidate stored data if the format has changed */
-    version: "2022_11_27",
+    version: "2022_11_29",
 
     lastCheck: null,
     running: false,
@@ -230,6 +251,9 @@ const GhContext = {
 
     /* Filter's name and status */
     filters: {},
+
+    /* Offset used for the onbehalf feature which is costly */
+    onBehalfOffset: 0,
 
     toggleFilter: async function (_type, _value) {
         let active = this.filters[_type + "-" + _value];
@@ -284,7 +308,9 @@ const GhContext = {
     refreshPullRequests: async function () {
         try {
             this.running = true;
-            await GhContext.checkPullRequests();
+            let result = await GhContext.checkRepositories();
+            await GhContext.checkPullRequests(result.date, result.repoToCheck, false, true);
+            await GhContext.checkOnBehalf(result.date);
             await GhContext.storeInLocalStorage();
         } finally {
             this.running = false;
@@ -297,8 +323,7 @@ const GhContext = {
                     // An update is already running, do nothing
                     return;
                 }
-                let nextCheck = new Date(GhContext.lastCheck.getTime() + GH_SCHEDULER_DELAY) // Update each 10 min
-                if (new Date() > nextCheck) {
+                if (GhContext.lastCheck === null || new Date() > new Date(GhContext.lastCheck.getTime() + GH_SCHEDULER_DELAY)) {
                     try {
                         GhContext.refreshPullRequests();
                     } catch (_e) {
@@ -331,16 +356,25 @@ const GhContext = {
         }
     },
 
-    checkPullRequests: async function () {
-        dispatchStatusMessage("Fetching Repositories...");
+    checkRepositories: async function () {
         const now = new Date()
+        dispatchStatusMessage("Fetching Repositories...");
 
         const repositories = await GhClient.getRepositoriesInfo(this.gh_token);
         this.repositories = repositories;
+        this.repositories.sort((a, b) => {
+            if (a.fullname < b.fullname) {
+                return -1;
+            }
+            if (a.fullname > b.fullname) {
+                return 1;
+            }
+            return 0;
+        })
 
         const repoToCheck = []
         const repoToCheckIds = []
-        for (let iorg of repositories) {
+        for (let iorg of this.repositories) {
             if (false === iorg.hasPullRequests) {
                 // Ignore this repository if no pull request is opened
                 continue;
@@ -362,39 +396,27 @@ const GhContext = {
         }
         console.debug(`${repoToCheck.length} repositories need to be checked`)
 
+        return {date: now, repoToCheck: repoToCheck}
+    },
+
+    checkPullRequests: async function (_date, _repoToCheck, _includesOnBehalf, _replaceFullList) {
+        const now = _date
+        const repoToCheck = _repoToCheck;
+
         const pullRequests = []
         let i = 0;
         for (let irepo of repoToCheck) {
             i = i + 1;
             dispatchStatusMessage(`Checking repository: ${irepo.fullname} [${i} of ${repoToCheck.length}]`);
 
-            const openedPullRequests = await GhClient.getPullRequestInfo(this.gh_token, irepo);
+            const openedPullRequests = await GhClient.getPullRequestInfo(this.gh_token, irepo, _includesOnBehalf);
 
             for (let ipr of openedPullRequests) {
-                ipr.reviews.sort((a, b) => {
-                    let isTeamA = a.login === undefined;
-                    let isTeamB = b.login === undefined;
-                    if (isTeamA && !isTeamB) {
-                        return -1;
-                    }
-                    if (!isTeamA && isTeamB) {
-                        return 1;
-                    }
-                    let loginA = isTeamA ? a.name.toUpperCase() : a.login.toUpperCase()
-                    let loginB = isTeamB ? b.name.toUpperCase() : b.login.toUpperCase()
-                    if (loginA < loginB) {
-                        return -1;
-                    }
-                    if (loginA > loginB) {
-                        return 1;
-                    }
-                    return 0;
-                });
-
+                let previous = this.pull_requests.find(o => o.id === ipr.id);
                 let matching = null;
                 for (let ireview of ipr.reviews) {
                     // Check if a review request is pending for a team of the user
-                    if (ireview.login === undefined) { // is team
+                    if (ireview.state === "TEAM") {
                         if (this.team_ids.includes(ireview.id)) {
                             matching = "team";
                         }
@@ -410,18 +432,60 @@ const GhContext = {
                     matching = "direct";
                 }
 
+                if (matching === null && previous !== undefined && previous.matching !== null) {
+                    // If this PR previously matched, keep it matching
+                    matching = previous.matching;
+                }
+
                 if (matching === null) {
                     // No matching found, ignore this PR
                     continue;
                 }
+
+                if (previous !== undefined) {
+                    // If this PR was previously known, keep the team reviews if not more present
+                    for (let ireview of previous.reviews) {
+                        if (ireview.state === "TEAM") {
+                            if (!ipr.reviews.some(r => r.id === ireview.id)) {
+                                ipr.reviews.push(ireview)
+                            }
+                        }
+                    }
+                }
+
                 ipr.matching = matching
                 pullRequests.push(ipr)
+
+                // Sort reviews : first teams then people
+                ipr.reviews.sort((a, b) => {
+                    if (a.state === "TEAM" && b.state !== "TEAM") {
+                        return -1;
+                    }
+                    if (a.state !== "TEAM" && b.state === "TEAM") {
+                        return 1;
+                    }
+                    let loginA = a.state === "TEAM" ? a.name.toUpperCase() : a.login.toUpperCase()
+                    let loginB = b.state === "TEAM" ? b.name.toUpperCase() : b.login.toUpperCase()
+                    if (loginA < loginB) {
+                        return -1;
+                    }
+                    if (loginA > loginB) {
+                        return 1;
+                    }
+                    return 0;
+                });
             }
         }
 
-        // TODO Keep the previous known PR mathching that are still not closed or merged
-
-        this.pull_requests = pullRequests
+        if (_replaceFullList) {
+            this.pull_requests = pullRequests
+        } else {
+            // In this mode, we keep the full list by replacing the updated pull requests
+            for (let ipr of pullRequests) {
+                this.pull_requests = this.pull_requests.filter(p => p.id !== ipr.id)
+                this.pull_requests.push(ipr)
+            }
+        }
         this.lastCheck = now
         dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString())
         window.document.dispatchEvent(new CustomEvent('gh_pull_requests', {
@@ -432,18 +496,55 @@ const GhContext = {
         }))
     },
 
+    checkOnBehalf: async function (_date) {
+        if (GhClient.rateLimit.resetAt === null) {
+            return
+        }
+        const nextRun = new Date(_date.getTime() + GH_SCHEDULER_DELAY)
+        if (nextRun < GhClient.rateLimit.resetAt) {
+            // It's not the last run before reset, do nothing
+            return
+        }
+        if (new Date(new Date().getTime() + (1000 * 60 * 2)) > GhClient.rateLimit.resetAt) {
+            // It's the last run but the reset will occur in less than 2 minutes, do nothing
+            return
+        }
+
+        // Next run is after the rate limit reset, let's consume the remaining budget
+        const budget = Math.max(0, GhClient.rateLimit.remaining - 500)
+        const costByRun = 120;
+        const count = Math.floor(budget / costByRun)
+
+        console.debug(`Consuming remaining budget for ${count} repos from offset ${this.onBehalfOffset}`)
+
+        const repoToCheck = []
+        while (repoToCheck.length < count) {
+            if (this.onBehalfOffset >= this.repositories.length) {
+                this.onBehalfOffset = 0;
+                break;
+            }
+            let repoToAdd = this.repositories[this.onBehalfOffset];
+            if (repoToAdd.hasPullRequests) {
+                repoToCheck.push(repoToAdd)
+            }
+            this.onBehalfOffset = this.onBehalfOffset + 1;
+        }
+        await this.checkPullRequests(_date, repoToCheck, true, false)
+    },
+
     storeInLocalStorage: async function () {
         let fromAssociative = (assArr) => ({...assArr})
 
         // The user informaiton is not store in the storage
         localStorage.setItem('gh_context_version', this.version);
-        localStorage.setItem('gh_context_last_check', this.lastCheck.getTime());
+        localStorage.setItem('gh_context_last_check', this.lastCheck !== null ? this.lastCheck.getTime() : 0);
         localStorage.setItem('gh_context_user', JSON.stringify(this.user));
         localStorage.setItem('gh_context_team_ids', JSON.stringify(this.team_ids));
         localStorage.setItem('gh_context_organizations', JSON.stringify(this.organisations));
         localStorage.setItem('gh_context_repositories', JSON.stringify(this.repositories));
         localStorage.setItem('gh_context_pull_requests', JSON.stringify(this.pull_requests));
         localStorage.setItem('gh_context_filters', JSON.stringify(fromAssociative(this.filters)));
+        localStorage.setItem('gh_context_on_behalf_offset', this.onBehalfOffset);
     },
 
     reloadFromLocalStorage: async function () {
@@ -475,6 +576,7 @@ const GhContext = {
             this.pull_requests = JSON.parse(localStorage.getItem('gh_context_pull_requests') ?? "[]");
             let filters = JSON.parse(localStorage.getItem('gh_context_filters') ?? "{}");
             this.filters = toAssociative(Object.keys(filters), Object.values(filters));
+            this.onBehalfOffset = parseInt(localStorage.getItem('gh_context_on_behalf_offset') ?? "0")
 
             // Retrigger events to update the view
             window.document.dispatchEvent(new CustomEvent('gh_organizations', {
