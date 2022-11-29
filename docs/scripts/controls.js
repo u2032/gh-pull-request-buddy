@@ -4,6 +4,12 @@ const filterTypes = ["matching", "organization"]
 /* Configuration  */
 
 function init() {
+    const form = document.getElementById("connection-form");
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        connection_step();
+    });
+
     const filters = document.querySelectorAll("button[data-filter]");
     for (const filter of filters) {
         filter.addEventListener('click', onClickFilter);
@@ -110,7 +116,7 @@ function checkNoPullRequest() {
 window.document.addEventListener("status_message",
     (e) => {
         document.getElementById("status-message").innerText = e.detail.message;
-    }, false);
+    });
 
 window.document.addEventListener("gh_connection",
     (e) => {
@@ -122,7 +128,7 @@ window.document.addEventListener("gh_connection",
             // Display error message
             document.getElementById("connection-error").classList.remove("w3-hide");
         }
-    }, false);
+    });
 
 
 window.document.addEventListener("gh_pull_requests",
@@ -254,7 +260,7 @@ window.document.addEventListener("gh_pull_requests",
         });
         checkNoPullRequest();
 
-    }, false);
+    });
 
 window.document.addEventListener("gh_organizations",
     (e) => {
@@ -304,7 +310,7 @@ window.document.addEventListener("gh_organizations",
             parent.appendChild(instance);
         }
 
-    }, false);
+    });
 
 window.document.addEventListener("gh_filter_toggle",
     (e) => {
@@ -323,3 +329,9 @@ window.document.addEventListener("gh_filter_toggle",
         applyFilters()
 
     }, false);
+
+window.addEventListener('DOMContentLoaded',
+    (event) => {
+        this.init();
+        this.loading_step();
+    });
