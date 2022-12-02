@@ -57,7 +57,7 @@ const GhClient = {
     },
 
     getUserInfo: async function (_token) {
-        let response = await this.request(_token, `{ viewer { id login name avatarUrl } }`);
+        let response = await this.request(_token, `{ rateLimit { remaining resetAt } viewer { id login name avatarUrl } }`);
         if (response === false) {
             return false;
         }
@@ -118,113 +118,126 @@ const GhClient = {
         return repositories;
     },
 
-    getPullRequestInfo: async function (_token, _repository, _includesOnBehalf) {
-        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state ${_includesOnBehalf ? "onBehalfOf(first:10) { nodes { id name } }" : ""} author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
+    getPullRequestInfos: async function (_token, _repository) {
+        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
         if (response === false) {
             return false;
         }
         const pullRequests = []
         for (let ipr of response.node.pullRequests.nodes) {
-            let author = {
-                id: ipr.author.id,
-                login: ipr.author.login,
-                name: ipr.author.name,
-                avatarUrl: ipr.author.avatarUrl
-            }
+            let pullRequest = this.extractPullRequestInfo(_repository, ipr);
+            pullRequests.push(pullRequest)
+        }
+        return pullRequests;
+    },
 
-            let reviews = []
-            // Add request reviews
-            for (let ireview of ipr.reviewRequests.nodes) {
+    getPullRequestInfo: async function (_token, _repository, _pullRequest) {
+        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_pullRequest.id}\") { id ... on PullRequest { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } }`)
+        if (response === false) {
+            return false;
+        }
+        let pullRequest = this.extractPullRequestInfo(_repository, response.node);
+        return pullRequest;
+    },
+
+    extractPullRequestInfo: function (_repository, ipr) {
+        let author = {
+            id: ipr.author.id,
+            login: ipr.author.login,
+            name: ipr.author.name,
+            avatarUrl: ipr.author.avatarUrl
+        }
+
+        let reviews = []
+        // Add request reviews
+        for (let ireview of ipr.reviewRequests.nodes) {
+            let review = {
+                id: ireview.requestedReviewer.id,
+                login: ireview.requestedReviewer.login,
+                name: ireview.requestedReviewer.name,
+                avatarUrl: ireview.requestedReviewer.avatarUrl,
+                state: ireview.requestedReviewer.login !== undefined ? "REQUESTED" : "TEAM"
+            }
+            reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
+            reviews.push(review);
+        }
+
+        // Add made review on behalf of
+        for (let ireview of ipr.reviews.nodes) {
+            if (ireview.onBehalfOf === undefined) {
+                break;
+            }
+            for (let iobf of ireview.onBehalfOf.nodes) {
                 let review = {
-                    id: ireview.requestedReviewer.id,
-                    login: ireview.requestedReviewer.login,
-                    name: ireview.requestedReviewer.name,
-                    avatarUrl: ireview.requestedReviewer.avatarUrl,
-                    state: ireview.requestedReviewer.login !== undefined ? "REQUESTED" : "TEAM"
+                    id: iobf.id,
+                    name: iobf.name,
+                    state: "TEAM"
                 }
                 reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
                 reviews.push(review);
             }
-
-            // Add made review on behalf of
-            for (let ireview of ipr.reviews.nodes) {
-                if (ireview.onBehalfOf === undefined) {
-                    break;
-                }
-                for (let iobf of ireview.onBehalfOf.nodes) {
-                    let review = {
-                        id: iobf.id,
-                        name: iobf.name,
-                        state: "TEAM"
-                    }
-                    reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
-                    reviews.push(review);
-                }
-            }
-
-            // Add made reviews
-            for (let ireview of ipr.reviews.nodes) {
-                if (ireview.author === null) {
-                    continue;
-                }
-                if (author.id === ireview.author.id) {
-                    // Ignore this review if the review is made by the PR's author (usually a comment)
-                    continue;
-                }
-
-                let status = ireview.state
-                if (status === "COMMENTED" || status === "DISMISSED") {
-                    // Fallback to REQUESTED if commented or dismissed
-                    status = "REQUESTED"
-                }
-
-                let review = {
-                    id: ireview.author.id,
-                    login: ireview.author.login,
-                    name: ireview.author.name,
-                    avatarUrl: ireview.author.avatarUrl,
-                    state: status
-                }
-                let previousReview = reviews.find(r => r.id === review.id);
-                if (previousReview === undefined) {
-                    reviews.push(review);
-                    continue;
-                }
-                if ((review.state === "PENDING" || review.state === "REQUESTED") && (previousReview.state === "APPROVED" || previousReview.state === "CHANGES_REQUESTED")) {
-                    // If the last review is still in pending or requested, keep the last in approved or changes_requested status instead
-                    reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
-                    reviews.push(review);
-                }
-            }
-
-            let assignees = []
-            // Add request assignees
-            for (let iassignee of ipr.assignees.nodes) {
-                let assignee = {
-                    id: iassignee.id,
-                    login: iassignee.login,
-                    name: iassignee.name,
-                    avatarUrl: iassignee.avatarUrl
-                }
-                assignees.push(assignee);
-            }
-
-            let pullRequest = {
-                id: ipr.id,
-                title: ipr.title,
-                number: ipr.number,
-                createdAt: ipr.createdAt,
-                state: ipr.state,
-                draft: ipr.isDraft,
-                url: ipr.url,
-                author: author,
-                repository: _repository,
-                reviews: reviews,
-                assignees: assignees
-            }
-            pullRequests.push(pullRequest)
         }
-        return pullRequests;
+
+        // Add made reviews
+        for (let ireview of ipr.reviews.nodes) {
+            if (ireview.author === null) {
+                continue;
+            }
+            if (author.id === ireview.author.id) {
+                // Ignore this review if the review is made by the PR's author (usually a comment)
+                continue;
+            }
+
+            let status = ireview.state
+            if (status === "COMMENTED" || status === "DISMISSED") {
+                // Fallback to REQUESTED if commented or dismissed
+                status = "REQUESTED"
+            }
+
+            let review = {
+                id: ireview.author.id,
+                login: ireview.author.login,
+                name: ireview.author.name,
+                avatarUrl: ireview.author.avatarUrl,
+                state: status
+            }
+            let previousReview = reviews.find(r => r.id === review.id);
+            if (previousReview === undefined) {
+                reviews.push(review);
+                continue;
+            }
+            if ((review.state === "PENDING" || review.state === "REQUESTED") && (previousReview.state === "APPROVED" || previousReview.state === "CHANGES_REQUESTED")) {
+                // If the last review is still in pending or requested, keep the last in approved or changes_requested status instead
+                reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
+                reviews.push(review);
+            }
+        }
+
+        let assignees = []
+        // Add request assignees
+        for (let iassignee of ipr.assignees.nodes) {
+            let assignee = {
+                id: iassignee.id,
+                login: iassignee.login,
+                name: iassignee.name,
+                avatarUrl: iassignee.avatarUrl
+            }
+            assignees.push(assignee);
+        }
+
+        return {
+            id: ipr.id,
+            title: ipr.title,
+            number: ipr.number,
+            createdAt: ipr.createdAt,
+            state: ipr.state,
+            draft: ipr.isDraft,
+            url: ipr.url,
+            author: author,
+            repository: _repository,
+            reviews: reviews,
+            assignees: assignees
+        };
     }
 }
 
@@ -234,7 +247,7 @@ const GhClient = {
 const GhContext = {
 
     /* Serialization version, useful to invalidate stored data if the format has changed */
-    version: "2022_11_29",
+    version: "2022_12_02",
 
     lastCheck: null,
     running: false,
@@ -261,6 +274,9 @@ const GhContext = {
 
     /* List of all the pull requests opened on those repositories */
     pull_requests: [], // { id, number, title, state, url, draft, createdAt, closed_at, merged_at, matching, author, repository, reviews }
+
+    /* This list holds the PR ids that are known and didn't match */
+    pull_requests_no_matching: [],
 
     /* Filter's name and status */
     filters: {},
@@ -316,10 +332,13 @@ const GhContext = {
     refreshPullRequests: async function () {
         try {
             this.running = true;
-            let result = await GhContext.checkRepositories();
-            await GhContext.checkPullRequests(result.date, result.repoToCheck, false, true);
-            await GhContext.checkOnBehalf(result.date);
+
+            let {openedPullRequestIds, noMatchingPullRequests} = await GhContext.checkPullRequests();
             await GhContext.storeInLocalStorage();
+
+            await GhContext.checkNoMatchingPullRequets(openedPullRequestIds, noMatchingPullRequests)
+            await GhContext.storeInLocalStorage();
+
         } finally {
             this.running = false;
         }
@@ -406,51 +425,27 @@ const GhContext = {
         return {date: now, repoToCheck: repoToCheck}
     },
 
-    checkPullRequests: async function (_date, _repoToCheck, _includesOnBehalf, _replaceFullList) {
-        const now = _date
-        const repoToCheck = _repoToCheck;
+    checkPullRequests: async function () {
+        let result = await GhContext.checkRepositories();
+
+        const now = result.date
+        const repoToCheck = result.repoToCheck;
 
         const pullRequests = []
+        const openedPullRequestIds = []
+        const noMatchingPullRequests = []
         let i = 0;
         for (let irepo of repoToCheck) {
             i = i + 1;
             await dispatchStatusMessage(`Checking repository: ${irepo.fullname} [${i} of ${repoToCheck.length}]`);
 
-            const openedPullRequests = await GhClient.getPullRequestInfo(this.gh_token, irepo, _includesOnBehalf);
+            const openedPullRequests = await GhClient.getPullRequestInfos(this.gh_token, irepo);
 
             for (let ipr of openedPullRequests) {
+                openedPullRequestIds.push(ipr.id)
+
                 let previous = this.pull_requests.find(o => o.id === ipr.id);
-                let matching = null;
-
-                if (previous !== undefined && previous.matching === "team") {
-                    // If this PR previously matched by TEAM, keep that value
-                    matching = previous.matching;
-                } else {
-                    for (let ireview of ipr.reviews) {
-                        // Check if a review request is pending for a team of the user
-                        if (ireview.state === "TEAM") {
-                            if (this.team_ids.includes(ireview.id)) {
-                                matching = "team";
-                            }
-                        }
-                        // Check if a review request is pending for the user
-                        if (ireview.id === this.user.id) {
-                            matching = "direct";
-                        }
-                    }
-                }
-
-                // Check assignee
-                for (let iassignee of ipr.assignees) {
-                    if (iassignee.id === this.user.id) {
-                        matching = "direct";
-                    }
-                }
-
-                // Check if the user is the author of the review
-                if (ipr.author.id === this.user.id) {
-                    matching = "direct";
-                }
+                let matching = this.computeMatchingType(ipr);
 
                 if (matching === null && previous !== undefined && previous.matching !== null) {
                     // If this PR previously matched, keep it matching
@@ -459,6 +454,7 @@ const GhContext = {
 
                 if (matching === null) {
                     // No matching found, ignore this PR
+                    noMatchingPullRequests.push({repo: irepo, pull_request: ipr})
                     continue;
                 }
 
@@ -473,39 +469,15 @@ const GhContext = {
                     }
                 }
 
+                // Sort reviews : first teams then people
+                this.sortReviewOnPullRequest(ipr);
+
                 ipr.matching = matching
                 pullRequests.push(ipr)
-
-                // Sort reviews : first teams then people
-                ipr.reviews.sort((a, b) => {
-                    if (a.state === "TEAM" && b.state !== "TEAM") {
-                        return -1;
-                    }
-                    if (a.state !== "TEAM" && b.state === "TEAM") {
-                        return 1;
-                    }
-                    let loginA = a.state === "TEAM" ? a.name.toUpperCase() : a.login.toUpperCase()
-                    let loginB = b.state === "TEAM" ? b.name.toUpperCase() : b.login.toUpperCase()
-                    if (loginA < loginB) {
-                        return -1;
-                    }
-                    if (loginA > loginB) {
-                        return 1;
-                    }
-                    return 0;
-                });
             }
         }
 
-        if (_replaceFullList) {
-            this.pull_requests = pullRequests
-        } else {
-            // In this mode, we keep the full list by replacing the updated pull requests
-            for (let ipr of pullRequests) {
-                this.pull_requests = this.pull_requests.filter(p => p.id !== ipr.id)
-                this.pull_requests.push(ipr)
-            }
-        }
+        this.pull_requests = pullRequests
         this.lastCheck = now
         await dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString())
         window.document.dispatchEvent(new CustomEvent('gh_pull_requests', {
@@ -514,42 +486,104 @@ const GhContext = {
                 last_check: now
             }
         }))
+
+        return {openedPullRequestIds: openedPullRequestIds, noMatchingPullRequests: noMatchingPullRequests}
     },
 
-    checkOnBehalf: async function (_date) {
-        if (GhClient.rateLimit.resetAt === null) {
-            return
-        }
-        const nextRun = new Date(_date.getTime() + GH_SCHEDULER_DELAY)
-        if (nextRun < GhClient.rateLimit.resetAt) {
-            // It's not the last run before reset, do nothing
-            return
-        }
-        if (new Date(new Date().getTime() + (1000 * 60 * 2)) > GhClient.rateLimit.resetAt) {
-            // It's the last run but the reset will occur in less than 2 minutes, do nothing
-            return
-        }
+    checkNoMatchingPullRequets: async function (openedPullRequestIds, noMatchingPullRequests) {
+        // Extra check for no matching Pull requests with onBehalfInfo
+        let extraPrFound = false
+        let i = 0;
+        for (let inm of noMatchingPullRequests) {
+            i = i+1
+            await dispatchStatusMessage(`Extra checks: [${i} of ${noMatchingPullRequests.length}]`)
 
-        // Next run is after the rate limit reset, let's consume the remaining budget
-        const budget = Math.max(0, GhClient.rateLimit.remaining - 500)
-        const costByRun = 120;
-        const count = Math.floor(budget / costByRun)
-
-        console.debug(`Consuming remaining budget for ${count} repos from offset ${this.onBehalfOffset}`)
-
-        const repoToCheck = []
-        while (repoToCheck.length < count) {
-            if (this.onBehalfOffset >= this.repositories.length) {
-                this.onBehalfOffset = 0;
-                break;
+            const ipr = inm.pull_request;
+            const alreadyChecked = this.pull_requests_no_matching.some(i => i === ipr.id);
+            if (!alreadyChecked) {
+                let fullPullRequestInfo = await GhClient.getPullRequestInfo(this.gh_token, inm.repo, ipr);
+                matching = this.computeMatchingType(fullPullRequestInfo)
+                if (matching === null) {
+                    this.pull_requests_no_matching.push(ipr.id)
+                } else {
+                    console.debug(`Selecting PR from onBehalf: ${inm.repo.fullname} / ${ipr.title}`)
+                    this.sortReviewOnPullRequest(ipr);
+                    ipr.matching = matching
+                    this.pull_requests.push(ipr)
+                    extraPrFound = true
+                }
             }
-            let repoToAdd = this.repositories[this.onBehalfOffset];
-            if (repoToAdd.hasPullRequests) {
-                repoToCheck.push(repoToAdd)
-            }
-            this.onBehalfOffset = this.onBehalfOffset + 1;
         }
-        await this.checkPullRequests(_date, repoToCheck, true, false)
+
+        await dispatchStatusMessage("Last update: " + this.lastCheck.toLocaleString())
+        if (extraPrFound) {
+            window.document.dispatchEvent(new CustomEvent('gh_pull_requests', {
+                detail: {
+                    pull_requests: this.pull_requests,
+                    last_check: this.lastCheck
+                }
+            }))
+        }
+
+        // Cleanup no_matching by removing the closed ones
+        this.pull_requests_no_matching = this.pull_requests_no_matching.filter(i => {
+            return openedPullRequestIds.includes(i)
+        });
+    },
+
+    computeMatchingType: function (ipr, previous) {
+        let matching = null;
+
+        if (previous !== undefined && previous.matching === "team") {
+            // If this PR previously matched by TEAM, keep that value
+            matching = previous.matching;
+        } else {
+            for (let ireview of ipr.reviews) {
+                // Check if a review request is pending for a team of the user
+                if (ireview.state === "TEAM") {
+                    if (this.team_ids.includes(ireview.id)) {
+                        matching = "team";
+                    }
+                }
+                // Check if a review request is pending for the user
+                if (ireview.id === this.user.id) {
+                    matching = "direct";
+                }
+            }
+        }
+
+        // Check assignee
+        for (let iassignee of ipr.assignees) {
+            if (iassignee.id === this.user.id) {
+                matching = "direct";
+            }
+        }
+
+        // Check if the user is the author of the review
+        if (ipr.author.id === this.user.id) {
+            matching = "direct";
+        }
+        return matching;
+    },
+
+    sortReviewOnPullRequest: function (ipr) {
+        ipr.reviews.sort((a, b) => {
+            if (a.state === "TEAM" && b.state !== "TEAM") {
+                return -1;
+            }
+            if (a.state !== "TEAM" && b.state === "TEAM") {
+                return 1;
+            }
+            let loginA = a.state === "TEAM" ? a.name.toUpperCase() : a.login.toUpperCase()
+            let loginB = b.state === "TEAM" ? b.name.toUpperCase() : b.login.toUpperCase()
+            if (loginA < loginB) {
+                return -1;
+            }
+            if (loginA > loginB) {
+                return 1;
+            }
+            return 0;
+        });
     },
 
     storeInLocalStorage: async function () {
@@ -563,8 +597,8 @@ const GhContext = {
         localStorage.setItem('gh_context_organizations', JSON.stringify(this.organisations));
         localStorage.setItem('gh_context_repositories', JSON.stringify(this.repositories));
         localStorage.setItem('gh_context_pull_requests', JSON.stringify(this.pull_requests));
+        localStorage.setItem('gh_context_pull_requests_no_matching', JSON.stringify(this.pull_requests_no_matching));
         localStorage.setItem('gh_context_filters', JSON.stringify(fromAssociative(this.filters)));
-        localStorage.setItem('gh_context_on_behalf_offset', this.onBehalfOffset);
     },
 
     reloadFromLocalStorage: async function () {
@@ -594,9 +628,9 @@ const GhContext = {
             this.organisations = JSON.parse(localStorage.getItem('gh_context_organizations') ?? "[]");
             this.repositories = JSON.parse(localStorage.getItem('gh_context_repositories') ?? "[]");
             this.pull_requests = JSON.parse(localStorage.getItem('gh_context_pull_requests') ?? "[]");
+            this.pull_requests_no_matching = JSON.parse(localStorage.getItem('gh_context_pull_requests_no_matching') ?? "[]");
             let filters = JSON.parse(localStorage.getItem('gh_context_filters') ?? "{}");
             this.filters = toAssociative(Object.keys(filters), Object.values(filters));
-            this.onBehalfOffset = parseInt(localStorage.getItem('gh_context_on_behalf_offset') ?? "0")
 
             // Retrigger events to update the view
             window.document.dispatchEvent(new CustomEvent('gh_organizations', {

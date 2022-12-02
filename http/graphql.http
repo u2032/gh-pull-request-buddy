@@ -41,19 +41,7 @@ X-Github-Next-Global-ID: 1
 {"query": "{ rateLimit { cost } viewer { repositories(first: 100, after: null, affiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR], ownerAffiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) { totalCount pageInfo { hasNextPage endCursor } nodes { id name pushedAt owner { id login avatarUrl } pullRequests(first: 100, states: OPEN) { nodes { id } } } } } }"}
 
 
-
-### get pull requests info -- cost 3
-
-POST https://api.github.com/graphql
-Authorization: bearer {{gh_token}}
-Content-Type: application/json
-Accept: application/vnd.github+json
-X-Github-Next-Global-ID: 1
-
-{"query": "{ rateLimit { cost } node(id: \"R_kgDOBo4JRQ\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } }  assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }"}
-
-
-### get pull requests info with onbehalfof -- cost 103
+### get pull request info with onbehalfof -- cost 1
 
 POST https://api.github.com/graphql
 Authorization: bearer {{gh_token}}
@@ -61,5 +49,5 @@ Content-Type: application/json
 Accept: application/vnd.github+json
 X-Github-Next-Global-ID: 1
 
-{"query": "{ rateLimit { cost } node(id: \"R_kgDOBo4JRQ\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } }  assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state onBehalfOf(first:10) { nodes { id name } } author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }"}
+{"query": "{ rateLimit { cost } node(id: \"PR_kwDOBo4JRc4O8E46\") { id ... on PullRequest { title number state isDraft createdAt url author { login avatarUrl ... on User { id name } }  assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state onBehalfOf(first:10) { nodes { id name } } author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } }"}
 

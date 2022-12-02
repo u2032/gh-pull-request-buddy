@@ -68,7 +68,7 @@ The GitHub token you provide is used by the dashboard but shared with nobody. Al
 Moreover, no third-party script are loaded by the page (mainly to avoid the risk of a compromised library) and all implemented scripts by this project are protected by an integrity hash and a strict Content Security Policy. 
 It means that the browser will not execute anything else than what is expected, decreasing the risk to have your GitHub token stolen by someone.   
 
-#### Generating the integrety hashes
+#### Generating the integrity hashes
 
 Here are the command used to generate the hashes:
 ```shell
