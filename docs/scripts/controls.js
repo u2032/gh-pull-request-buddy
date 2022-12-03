@@ -164,6 +164,10 @@ window.document.addEventListener("gh_pull_requests",
         const lastCheck = e.detail.last_check
         const pullRequests = e.detail.pull_requests
         for (let pr of pullRequests) {
+            if (GhContext.isIgnored(pr.id)) {
+                continue  // Skip ignored PR
+            }
+
             const owner = pr.repository.owner;
             const matching = pr.matching;
 
@@ -188,8 +192,16 @@ window.document.addEventListener("gh_pull_requests",
                 instance.dataset.draft = true;
             }
 
-            instance.addEventListener("click", function () {
+            const actionOpen = instance.querySelector(".action-open")
+            actionOpen.addEventListener("click", function () {
                 window.open(pr.url, '_blank');
+            });
+
+            const actionIgnoreConfirm = instance.querySelector(".action-ignore-confirm")
+            actionIgnoreConfirm.addEventListener("click", function () {
+                GhContext.markAsIgnored(pr.id)
+                instance.classList.add("w3-hide")
+                GhContext.storeInLocalStorage()
             });
 
             const prAuthor = instance.querySelector(".pull-request-author");
@@ -198,6 +210,9 @@ window.document.addEventListener("gh_pull_requests",
 
             const prTitle = instance.querySelector(".pull-request-title");
             prTitle.innerText = pr.title;
+            prTitle.addEventListener("click", function () {
+                window.open(pr.url, '_blank');
+            });
 
             const prNumber = instance.querySelector(".pull-request-number");
             prNumber.innerText = "#" + pr.number;

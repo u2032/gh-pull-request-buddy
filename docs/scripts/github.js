@@ -288,6 +288,9 @@ const GhContext = {
     /* This list holds the PR ids that are known and didn't match */
     pull_requests_no_matching: [],
 
+    /* This list holds the PR ids that were marked as ignored */
+    pull_requests_ignored: [],
+
     /* Filter's name and status */
     filters: {},
 
@@ -313,6 +316,14 @@ const GhContext = {
             return true;
         }
         return this.filters[_type + "-" + _value];
+    },
+
+    markAsIgnored: function ( _prId ) {
+        this.pull_requests_ignored.push( _prId )
+    },
+
+    isIgnored: function ( _prId ) {
+        return this.pull_requests_ignored.includes( _prId )
     },
 
     connect: async function (_token) {
@@ -347,6 +358,9 @@ const GhContext = {
             await GhContext.storeInLocalStorage();
 
             await GhContext.checkNoMatchingPullRequets(openedPullRequestIds, noMatchingPullRequests)
+            await GhContext.storeInLocalStorage();
+
+            await GhContext.cleanUpIgnoreList(openedPullRequestIds)
             await GhContext.storeInLocalStorage();
 
         } finally {
@@ -455,7 +469,7 @@ const GhContext = {
                 openedPullRequestIds.push(ipr.id)
 
                 let previous = this.pull_requests.find(o => o.id === ipr.id);
-                let matching = this.computeMatchingType(ipr);
+                let matching = this.computeMatchingType(ipr, previous);
 
                 if (matching === null && previous !== undefined && previous.matching !== null) {
                     // If this PR previously matched, keep it matching
@@ -505,14 +519,15 @@ const GhContext = {
         let extraPrFound = false
         let i = 0;
         for (let inm of noMatchingPullRequests) {
-            i = i+1
+            i = i + 1
             await dispatchStatusMessage(`Extra checks: [${i} of ${noMatchingPullRequests.length}]`)
 
             const ipr = inm.pull_request;
             const alreadyChecked = this.pull_requests_no_matching.some(i => i === ipr.id);
             if (!alreadyChecked) {
+                let previous = this.pull_requests.find(o => o.id === ipr.id);
                 let fullPullRequestInfo = await GhClient.getPullRequestInfo(this.gh_token, inm.repo, ipr);
-                matching = this.computeMatchingType(fullPullRequestInfo)
+                let matching = this.computeMatchingType(fullPullRequestInfo, previous)
                 if (matching === null) {
                     this.pull_requests_no_matching.push(ipr.id)
                 } else {
@@ -537,6 +552,12 @@ const GhContext = {
 
         // Cleanup no_matching by removing the closed ones
         this.pull_requests_no_matching = this.pull_requests_no_matching.filter(i => {
+            return openedPullRequestIds.includes(i)
+        });
+    },
+
+    cleanUpIgnoreList: function(openedPullRequestIds) {
+        this.pull_requests_ignored = this.pull_requests_ignored.filter(i => {
             return openedPullRequestIds.includes(i)
         });
     },
@@ -612,6 +633,7 @@ const GhContext = {
         localStorage.setItem('gh_context_repositories', JSON.stringify(this.repositories));
         localStorage.setItem('gh_context_pull_requests', JSON.stringify(this.pull_requests));
         localStorage.setItem('gh_context_pull_requests_no_matching', JSON.stringify(this.pull_requests_no_matching));
+        localStorage.setItem('gh_context_pull_requests_ignored', JSON.stringify(this.pull_requests_ignored));
         localStorage.setItem('gh_context_filters', JSON.stringify(fromAssociative(this.filters)));
     },
 
@@ -643,6 +665,7 @@ const GhContext = {
             this.repositories = JSON.parse(localStorage.getItem('gh_context_repositories') ?? "[]");
             this.pull_requests = JSON.parse(localStorage.getItem('gh_context_pull_requests') ?? "[]");
             this.pull_requests_no_matching = JSON.parse(localStorage.getItem('gh_context_pull_requests_no_matching') ?? "[]");
+            this.pull_requests_ignored = JSON.parse(localStorage.getItem('gh_context_pull_requests_ignored') ?? "[]");
             let filters = JSON.parse(localStorage.getItem('gh_context_filters') ?? "{}");
             this.filters = toAssociative(Object.keys(filters), Object.values(filters));
 

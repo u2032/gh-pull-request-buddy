@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="./styles/solid.min.css" integrity="sha384-XA4GNh8NX8EYkM7X7NCXQzS7tTEzSelPJ2gF6s+KKgR7Fcep3WAa9iKAxyYEQBqh">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
 
-    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-PKInaW67fo0vE6xEcl+HyQWUpwh++P+H7bBW1Lu/SvQyWvgJzg7K2qtWl318gUxN" defer></script>
-    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-J64BSNBwzH+iGUU2Q2qjCefsLZXGS2yu9V/oVUzN0TcUM+vtP+XMhuliv8Kl17E8" defer></script>
+    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-Sy5QeIKQQOawrT0AXNYb9Ia93FY+5sKsmTXreCJhekJ3w3EE6Ee1U9Hcgwhh8FHc" defer></script>
+    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-xoPNNu9gHTxDI09UTwhjv3PzyuAHPssT0RZaJLB5ZK9bGhB3eiwoTZg/Wv4rGlSi" defer></script>
     <!-- @formatter:on -->
 
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
@@ -145,7 +145,7 @@
 
         <div class="w3-padding-top-32">
             <div id="pull-request-template"
-                 class="w3-card-4 w3-padding w3-white w3-section w3-round-small w3-hover-light-blue w3-hide pointable">
+                 class="w3-card-4 w3-padding w3-white w3-section w3-round-small w3-hide">
                 <div class="w3-row flex">
                     <div class="w3-col s11 m11 l11 flex">
                         <div class="w3-padding-small">
@@ -153,7 +153,7 @@
                         </div>
                         <div>
                             <div>
-                                <span class="pull-request-title w3-large bold">This is a title</span>
+                                <span class="pull-request-title w3-large bold pointable w3-hover">This is a title</span>
                                 <span class="pull-request-number w3-large w3-text-dark-gray">#1234</span>
                             </div>
                             <div>
@@ -176,6 +176,19 @@
                         </div>
                     </div>
                     <div class="w3-col s1 m1 l1 w3-right-align w3-display-container">
+                        <div class="w3-display-topright w3-text-dark-gray">
+                            <div class="action-ignore pointable w3-right w3-margin-left w3-dropdown-hover w3-white w3-text-dark-gray">
+                                <i class="fa-solid fa-eye-slash" title="IGNORE"></i>
+                                <div class="w3-dropdown-content w3-card-4 w3-left-align w3-padding-small">
+                                    <div class="w3-hover-light-blue pointable action-ignore-confirm">
+                                        <i class="fa-solid fa-check"></i>Confirm ignoring this PR?
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="action-open pointable w3-right">
+                                <i class="fa-solid fa-up-right-from-square" title="OPEN"></i>
+                            </div>
+                        </div>
                         <div class="w3-display-bottomright">
                             <div class="w3-hide" data-matching="direct">
                                 <i class="fa-solid fa-bullseye w3-text-red" title="DIRECT"></i>

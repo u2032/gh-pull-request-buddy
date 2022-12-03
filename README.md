@@ -32,8 +32,8 @@ The dashboard can be filtered by organization and by matching type (direct or te
 
 ### Additional features
 
-#### Ignore list (soon)
-If you are really not interested in a pull request, you can ignore it, it will be hidden by the dashbord
+#### Ignore list
+If you are really not interested in a pull request, you can ignore it, it will be hidden by the dashboard
 
 #### Desktop notifications (soon)
 
@@ -90,3 +90,11 @@ This file handles the updates of the view and let the user interacts whith the p
 #### github.js
 This file implements the calls to the GitHub API and keeps also the needed data to display. 
 Some events are emitted by this part when something happens, like when a pull request has been fetched through the API (such an event is caught to update the view)  
+
+### Storage 
+
+This project is not fully stateless, mainly to keep a cache and avoiding reaching the GitHub API rate limit, and also for the implementation of somes features (like the ignore list)
+
+To store this data, the dashboard uses the `localstorage` of the browser. The data is not loaded if the connected user is not the same as the previous one, and the user can ask to delete all the cached data manually. 
+
+When there is no data in the cache, the loading time and the number of calls to the API is bigger to rebuild it. Moreover, all the preferences are reset  
