@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="./styles/solid.min.css" integrity="sha384-XA4GNh8NX8EYkM7X7NCXQzS7tTEzSelPJ2gF6s+KKgR7Fcep3WAa9iKAxyYEQBqh">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
 
-    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-Sy5QeIKQQOawrT0AXNYb9Ia93FY+5sKsmTXreCJhekJ3w3EE6Ee1U9Hcgwhh8FHc" defer></script>
-    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-xoPNNu9gHTxDI09UTwhjv3PzyuAHPssT0RZaJLB5ZK9bGhB3eiwoTZg/Wv4rGlSi" defer></script>
+    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-CtenLJW8aCmOwivwkZQAdLokogvDMXl1dQyEoUEivICO4IoxWrvHgk7e39Qb/oYf" defer></script>
+    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-jOv2WAxopzdVgxGi/9LI1kYl688++ESjclDji0gI041jWmVaHAafrLU2Fq9BXyQx" defer></script>
     <!-- @formatter:on -->
 
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
@@ -144,12 +144,27 @@
         </div>
 
         <div class="w3-padding-top-32">
+            <div id="sorting-option" class="w3-small w3-text-gray w3-hide">
+                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                Sorted by:
+                <div class="w3-show-inline-block w3-dropdown-hover">
+                    <span class="sorting-option" data-sortby="created">Creation Date</span><span class="sorting-option" data-sortby="priority">Priority</span>
+                    <div class="w3-dropdown-content w3-card-4 w3-padding-small">
+                        <div class="w3-hover-light-blue pointable" data-sortby="created">
+                            <i class="fa-solid fa-calendar-days"></i>&nbsp;Creation Date
+                        </div>
+                        <div class="w3-hover-light-blue pointable" data-sortby="priority">
+                            <i class="fa-solid fa-angles-up"></i>&nbsp;Priority
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="pull-request-template"
                  class="w3-card-4 w3-padding w3-white w3-section w3-round-small w3-hide">
                 <div class="w3-row flex">
                     <div class="w3-col s11 m11 l11 flex">
                         <div class="w3-padding-small">
-                            &nbsp;
+                            <i class="pull-request-priority w3-xlarge"></i>
                         </div>
                         <div>
                             <div>

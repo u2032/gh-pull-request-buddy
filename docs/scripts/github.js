@@ -294,6 +294,9 @@ const GhContext = {
     /* Filter's name and status */
     filters: {},
 
+    /* Preferred sort option */
+    sortBy: "created",
+
     /* Offset used for the onbehalf feature which is costly */
     onBehalfOffset: 0,
 
@@ -318,12 +321,12 @@ const GhContext = {
         return this.filters[_type + "-" + _value];
     },
 
-    markAsIgnored: function ( _prId ) {
-        this.pull_requests_ignored.push( _prId )
+    markAsIgnored: function (_prId) {
+        this.pull_requests_ignored.push(_prId)
     },
 
-    isIgnored: function ( _prId ) {
-        return this.pull_requests_ignored.includes( _prId )
+    isIgnored: function (_prId) {
+        return this.pull_requests_ignored.includes(_prId)
     },
 
     connect: async function (_token) {
@@ -497,6 +500,7 @@ const GhContext = {
                 this.sortReviewOnPullRequest(ipr);
 
                 ipr.matching = matching
+                ipr.priority = this.computePriority(ipr)
                 pullRequests.push(ipr)
             }
         }
@@ -534,6 +538,7 @@ const GhContext = {
                     console.debug(`Selecting PR from onBehalf: ${inm.repo.fullname} / ${ipr.title}`)
                     this.sortReviewOnPullRequest(ipr);
                     ipr.matching = matching
+                    ipr.priority = this.computePriority(ipr)
                     this.pull_requests.push(ipr)
                     extraPrFound = true
                 }
@@ -556,10 +561,34 @@ const GhContext = {
         });
     },
 
-    cleanUpIgnoreList: function(openedPullRequestIds) {
+    cleanUpIgnoreList: function (openedPullRequestIds) {
         this.pull_requests_ignored = this.pull_requests_ignored.filter(i => {
             return openedPullRequestIds.includes(i)
         });
+    },
+
+    computePriority: function (ipr) {
+        let priority = "low";
+
+        let oldDelay = Math.floor(1000 * 60 * 60 * 24 * 3.5) // = 3.5 days
+        let isOld = new Date(new Date(ipr.createdAt).getTime() + oldDelay) < new Date()
+
+        let matching = ipr.matching
+        if (matching !== undefined) {
+            if (matching === 'direct') {
+                priority = isOld ? "highest" : "high"
+            } else if (matching === 'team') {
+                priority = isOld ? "high" : "low"
+            }
+        }
+
+        for (let ilabel of ipr.labels) {
+            if (ilabel.name === "dependencies") {
+                priority = "lowest"
+            }
+        }
+
+        return priority;
     },
 
     computeMatchingType: function (ipr, previous) {
@@ -635,6 +664,7 @@ const GhContext = {
         localStorage.setItem('gh_context_pull_requests_no_matching', JSON.stringify(this.pull_requests_no_matching));
         localStorage.setItem('gh_context_pull_requests_ignored', JSON.stringify(this.pull_requests_ignored));
         localStorage.setItem('gh_context_filters', JSON.stringify(fromAssociative(this.filters)));
+        localStorage.setItem('gh_context_sort_by', this.sortBy);
     },
 
     reloadFromLocalStorage: async function () {
@@ -668,6 +698,7 @@ const GhContext = {
             this.pull_requests_ignored = JSON.parse(localStorage.getItem('gh_context_pull_requests_ignored') ?? "[]");
             let filters = JSON.parse(localStorage.getItem('gh_context_filters') ?? "{}");
             this.filters = toAssociative(Object.keys(filters), Object.values(filters));
+            this.sortBy = localStorage.getItem('gh_context_sort_by') ?? "created";
 
             // Retrigger events to update the view
             window.document.dispatchEvent(new CustomEvent('gh_organizations', {

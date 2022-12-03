@@ -1,5 +1,6 @@
 const steps = ["loading", "connection", "dashboard"];
 const filterTypes = ["matching", "organization"]
+const sortingOptions = ["created", "priority"]
 
 /* Configuration  */
 
@@ -13,6 +14,11 @@ function init() {
     const filters = document.querySelectorAll("button[data-filter]");
     for (const filter of filters) {
         filter.addEventListener('click', onClickFilter);
+    }
+
+    const sorts = document.querySelectorAll("div[data-sortby]");
+    for (const sort of sorts) {
+        sort.addEventListener('click', onClickSort);
     }
 
     const actionLogout = document.getElementById("action-logout")
@@ -50,6 +56,16 @@ function onClickFilter(e) {
             }
         }
     }
+}
+
+function onClickSort(e) {
+    const type = e.target.dataset.sortby;
+
+    // Save option
+    GhContext.sortBy = type
+    GhContext.storeInLocalStorage()
+
+    applySorting()
 }
 
 /* VIEW MANAGEMENT */
@@ -113,6 +129,31 @@ function applyFilters() {
     checkNoPullRequest();
 }
 
+function applySorting() {
+    const parent = document.getElementById("dashboard");
+    const sortOption = GhContext.sortBy;
+
+    let allSortingOptions = parent.querySelectorAll(".sorting-option");
+    for (let opt of allSortingOptions) {
+        const type = opt.dataset.sortby
+        if (type === sortOption) {
+            opt.classList.remove("w3-hide")
+        } else {
+            opt.classList.add("w3-hide")
+        }
+    }
+
+    let allInstances = Array.from(parent.querySelectorAll(".pull-request-instance"));
+    allInstances.sort((a, b) => {
+        let createdA = parseInt(a.dataset[sortOption]);
+        let createdB = parseInt(b.dataset[sortOption]);
+        return createdB - createdA;
+    });
+    allInstances.forEach(function (node) {
+        node.parentNode.append(node);
+    });
+}
+
 function isOrganizationActive(_value) {
     return GhContext.isFilterActive("organization", _value);
 }
@@ -129,10 +170,13 @@ function checkNoPullRequest() {
     }
     const noPr = document.getElementById("no-pull-request");
     const visibleElements = document.querySelectorAll("div.pull-request-instance:not(.w3-hide)");
+    const sortingOption = document.getElementById("sorting-option");
     if (visibleElements.length > 0) {
         noPr.classList.add("w3-hide");
+        sortingOption.classList.remove("w3-hide")
     } else {
         noPr.classList.remove("w3-hide");
+        sortingOption.classList.add("w3-hide")
     }
 }
 
@@ -272,9 +316,28 @@ window.document.addEventListener("gh_pull_requests",
                 prReviewList.appendChild(prReviewInstance)
             }
 
-            const matchingIcon = instance.querySelector("div[data-matching=" + matching + "]");
+            const matchingIcon = instance.querySelector(`div[data-matching=${matching}]`);
             if (matchingIcon !== null) {
                 matchingIcon.classList.remove("w3-hide")
+            }
+
+            const priorityIcon = instance.querySelector(".pull-request-priority");
+            if (pr.priority === "highest") {
+                priorityIcon.classList.add("fa-solid", "fa-angles-up", "w3-text-red");
+                priorityIcon.title = "Priority: HIGHEST";
+                instance.dataset.priority = "3";
+            } else if (pr.priority === "high") {
+                priorityIcon.classList.add("fa-solid", "fa-angle-up", "w3-text-red");
+                priorityIcon.title = "Priority: HIGH";
+                instance.dataset.priority = "2";
+            } else if (pr.priority === "low") {
+                priorityIcon.classList.add("fa-solid", "fa-angle-down", "w3-text-blue");
+                priorityIcon.title = "Priority: LOW";
+                instance.dataset.priority = "1";
+            } else if (pr.priority === "lowest") {
+                priorityIcon.classList.add("fa-solid", "fa-angles-down", "w3-text-blue");
+                priorityIcon.title = "Priority: LOWEST";
+                instance.dataset.priority = "0";
             }
 
             // Remove the existing instance with the same ID
@@ -287,16 +350,8 @@ window.document.addEventListener("gh_pull_requests",
             parent.appendChild(instance);
         }
 
-        // Sort by creation date
-        let allInstances = Array.from(parent.querySelectorAll(".pull-request-instance"));
-        allInstances.sort((a, b) => {
-            let createdA = parseInt(a.getAttribute("data-created"));
-            let createdB = parseInt(b.getAttribute("data-created"));
-            return createdB - createdA;
-        });
-        allInstances.forEach(function (node) {
-            node.parentNode.append(node);
-        });
+        // Reapply Sorting
+        this.applySorting();
 
         // Reapply filters
         this.applyFilters();
