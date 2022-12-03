@@ -72,8 +72,9 @@ It means that the browser will not execute anything else than what is expected, 
 
 Here are the command used to generate the hashes:
 ```shell
-echo "controls.js: $(cat docs/scripts/controls.js | openssl dgst -sha384 -binary | openssl base64 -A)";
-echo "github.js: $(cat docs/scripts/github.js | openssl dgst -sha384 -binary | openssl base64 -A)";
+echo "main.css: sha384-$(cat docs/styles/main.css | openssl dgst -sha384 -binary | openssl base64 -A)";
+echo "controls.js: sha384-$(cat docs/scripts/controls.js | openssl dgst -sha384 -binary | openssl base64 -A)";
+echo "github.js: sha384-$(cat docs/scripts/github.js | openssl dgst -sha384 -binary | openssl base64 -A)";
 ```
 
 ### Architecture 

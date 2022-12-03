@@ -586,6 +586,10 @@ const GhContext = {
         });
     },
 
+    clearLocalStorage: async function () {
+        localStorage.clear()
+    },
+
     storeInLocalStorage: async function () {
         let fromAssociative = (assArr) => ({...assArr})
 

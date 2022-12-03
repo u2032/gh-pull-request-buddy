@@ -7,7 +7,7 @@
           content="default-src 'self'; script-src 'self'; style-src 'self' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' avatars.githubusercontent.com; connect-src 'self' api.github.com">
 
     <link rel="stylesheet" href="./styles/main.css"
-          integrity="+EPkF2izgKz1yvsuGMSx2zdFfaaDHXWt520/e7gPA54Zr2ugl4MsXIFGoBjTISn8">
+          integrity="sha384-AxPO7NFUyq/S8O9ljgmbOSSSEhTBupkysztREjvX9TjUJLr+EsEEzLgOdAd+p5g+">
     <link rel="stylesheet" href="./styles/w3.css"
           integrity="sha384-D/ks+FHpVJ2hDDjKLeLyhPMM2X+ECcQTDIDN/mMRz2P4+7nemyPpeyjpTTLt+2zy">
     <link rel="stylesheet" href="./styles/fontawesome.min.css"
@@ -16,8 +16,8 @@
           integrity="sha384-XA4GNh8NX8EYkM7X7NCXQzS7tTEzSelPJ2gF6s+KKgR7Fcep3WAa9iKAxyYEQBqh">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
 
-    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-h1acJr1fAELUSOVWsm0vhc53glFobYEmxKu/za/AdvYnnFiuMIUd6qm5IaREYbmN" defer></script>
-    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-Tb1oZVoOWbXaWHMak1vHZRPQNtf439pv1nar0jKW61cihFuy8c6zfJFgB0tja3Ah" defer></script>
+    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-nWhASlVr5/9geiyClERuRBWyYo4RfVwgNm99WI6f9p5ZvCli0bevfhGNytiXV8L0" defer></script>
+    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-X+kxBze9kahkx16OoLxLC/8mHQG/dnoJ3tkuBN+bNwoENJd/H1yui3VtPvwwZ47e" defer></script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png">
@@ -28,10 +28,20 @@
 
 <header class="w3-top">
     <div class="w3-bar w3-nav w3-teal">
+        <div class="w3-dropdown-hover w3-teal margin-top-4">
+            <button class="w3-button w3-teal w3-hover-light-blue">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+            <div class="w3-dropdown-content w3-bar-block w3-card-4">
+                <button id="action-logout" class="w3-bar-item w3-button"><i class="fa-solid fa-power-off"></i>&nbsp;Log out</button>
+                <button id="action-forgetme" class="w3-bar-item w3-button"><i class="fa-solid fa-trash"></i>&nbsp;Delete data and forget me</button>
+            </div>
+        </div>
         <div id="header-user" class="w3-bar-item w3-hide">
             <span id="user-name"></span> (@<span id="user-login"></span>)
         </div>
-        <div id="status-message" class="w3-bar-item w3-right w3-small italic">&nbsp;</div>
+        <div class="w3-bar-item">&nbsp;</div>
+        <div id="status-message" class="w3-bar-item w3-right w3-small italic margin-top-4">&nbsp;</div>
     </div>
 </header>
 

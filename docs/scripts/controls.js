@@ -14,6 +14,17 @@ function init() {
     for (const filter of filters) {
         filter.addEventListener('click', onClickFilter);
     }
+
+    const actionLogout = document.getElementById("action-logout")
+    actionLogout.addEventListener('click', function (e) {
+        document.location.reload()
+    })
+
+    const actionForgetme = document.getElementById("action-forgetme")
+    actionForgetme.addEventListener('click', async function (e) {
+        await GhContext.clearLocalStorage()
+        document.location.reload()
+    })
 }
 
 function onClickFilter(e) {
