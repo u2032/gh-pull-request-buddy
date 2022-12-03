@@ -212,6 +212,16 @@ window.document.addEventListener("gh_pull_requests",
             const prCreatedAt = instance.querySelector(".pull-request-created-at");
             prCreatedAt.innerText = new Date(pr.createdAt).toLocaleString();
 
+            const prLabelList = instance.querySelector(".pull-request-label-list");
+            const prLabelTemplate = instance.querySelector(".pull-request-label-template");
+            for (let ilabel of pr.labels) {
+                const labelInstance = prLabelTemplate.cloneNode(true)
+                labelInstance.innerText = '#' + ilabel.name
+                labelInstance.title = ilabel.name
+                labelInstance.classList.remove('w3-hide')
+                prLabelList.appendChild(labelInstance)
+            }
+
             const prReviewList = instance.querySelector(".pull-request-review-list");
             const prReviewTemplate = prReviewList.querySelector(".pull-request-review-template");
             for (let review of pr.reviews) {

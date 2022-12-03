@@ -119,7 +119,7 @@ const GhClient = {
     },
 
     getPullRequestInfos: async function (_token, _repository) {
-        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
+        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_repository.id}\") { id ... on Repository { name pullRequests(last: 100, states: OPEN) { nodes { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } labels(first:10) { nodes { name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } } } }`)
         if (response === false) {
             return false;
         }
@@ -132,7 +132,7 @@ const GhClient = {
     },
 
     getPullRequestInfo: async function (_token, _repository, _pullRequest) {
-        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_pullRequest.id}\") { id ... on PullRequest { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } }`)
+        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_pullRequest.id}\") { id ... on PullRequest { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } labels(first:10) { nodes { name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } }`)
         if (response === false) {
             return false;
         }
@@ -213,8 +213,8 @@ const GhClient = {
             }
         }
 
-        let assignees = []
         // Add request assignees
+        let assignees = []
         for (let iassignee of ipr.assignees.nodes) {
             let assignee = {
                 id: iassignee.id,
@@ -223,6 +223,15 @@ const GhClient = {
                 avatarUrl: iassignee.avatarUrl
             }
             assignees.push(assignee);
+        }
+
+        // Add labels
+        let labels = []
+        for (let ilabel of ipr.labels.nodes) {
+            let label = {
+                name: ilabel.name
+            }
+            labels.push(label);
         }
 
         return {
@@ -235,8 +244,9 @@ const GhClient = {
             url: ipr.url,
             author: author,
             repository: _repository,
-            reviews: reviews,
-            assignees: assignees
+            labels: labels,
+            assignees: assignees,
+            reviews: reviews
         };
     }
 }
