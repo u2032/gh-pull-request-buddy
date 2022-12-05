@@ -132,7 +132,7 @@ const GhClient = {
     },
 
     getPullRequestInfo: async function (_token, _repository, _pullRequest) {
-        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_pullRequest.id}\") { id ... on PullRequest { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } labels(first:10) { nodes { name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } }`)
+        const response = await this.request(_token, `{ rateLimit { remaining resetAt } node(id: \"${_pullRequest.id}\") { id ... on PullRequest { id title number state isDraft createdAt url author { login avatarUrl ... on User { id name } } labels(first:10) { nodes { name } } assignees(first:10) { nodes { id login name avatarUrl } } reviews(last:100) { nodes { id state onBehalfOf(first:10) { nodes { id name } } author { login avatarUrl ... on User { id name } } } } reviewRequests(last:100) { nodes { id asCodeOwner requestedReviewer { ... on Team { id name } ... on User { id login name avatarUrl } } } } } } }`)
         if (response === false) {
             return false;
         }
@@ -522,26 +522,23 @@ const GhContext = {
         // Extra check for no matching Pull requests with onBehalfInfo
         let extraPrFound = false
         let i = 0;
-        for (let inm of noMatchingPullRequests) {
+        let prToCheck = noMatchingPullRequests.filter(p => !this.pull_requests_no_matching.some(i => i === p.id)) // Remove already checked PR
+        for (let inm of prToCheck) {
             i = i + 1
-            await dispatchStatusMessage(`Extra checks: [${i} of ${noMatchingPullRequests.length}]`)
+            await dispatchStatusMessage(`Extra checks: [${i} of ${prToCheck.length}]`)
 
-            const ipr = inm.pull_request;
-            const alreadyChecked = this.pull_requests_no_matching.some(i => i === ipr.id);
-            if (!alreadyChecked) {
-                let previous = this.pull_requests.find(o => o.id === ipr.id);
-                let fullPullRequestInfo = await GhClient.getPullRequestInfo(this.gh_token, inm.repo, ipr);
-                let matching = this.computeMatchingType(fullPullRequestInfo, previous)
-                if (matching === null) {
-                    this.pull_requests_no_matching.push(ipr.id)
-                } else {
-                    console.debug(`Selecting PR from onBehalf: ${inm.repo.fullname} / ${ipr.title}`)
-                    this.sortReviewOnPullRequest(ipr);
-                    ipr.matching = matching
-                    ipr.priority = this.computePriority(ipr)
-                    this.pull_requests.push(ipr)
-                    extraPrFound = true
-                }
+            let previous = this.pull_requests.find(o => o.id === inm.pull_request.id);
+            let fullPullRequestInfo = await GhClient.getPullRequestInfo(this.gh_token, inm.repo, inm.pull_request);
+            let matching = this.computeMatchingType(fullPullRequestInfo, previous)
+            if (matching === null) {
+                this.pull_requests_no_matching.push(inm.pull_request.id)
+            } else {
+                console.debug(`Selecting PR from onBehalf: ${inm.repo.fullname} / ${fullPullRequestInfo.title}`)
+                this.sortReviewOnPullRequest(fullPullRequestInfo);
+                fullPullRequestInfo.matching = matching
+                fullPullRequestInfo.priority = this.computePriority(fullPullRequestInfo)
+                this.pull_requests.push(fullPullRequestInfo)
+                extraPrFound = true
             }
         }
 
