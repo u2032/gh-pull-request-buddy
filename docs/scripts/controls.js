@@ -325,19 +325,19 @@ window.document.addEventListener("gh_pull_requests",
             if (pr.priority === "highest") {
                 priorityIcon.classList.add("fa-solid", "fa-angles-up", "w3-text-red");
                 priorityIcon.title = "Priority: HIGHEST";
-                instance.dataset.priority = "3";
+                instance.dataset.priority = "4" + instance.dataset.created;
             } else if (pr.priority === "high") {
                 priorityIcon.classList.add("fa-solid", "fa-angle-up", "w3-text-red");
                 priorityIcon.title = "Priority: HIGH";
-                instance.dataset.priority = "2";
+                instance.dataset.priority = "3" + instance.dataset.created;
             } else if (pr.priority === "low") {
                 priorityIcon.classList.add("fa-solid", "fa-angle-down", "w3-text-blue");
-                priorityIcon.title = "Priority: LOW";
-                instance.dataset.priority = "1";
+                priorityIcon.title = "Priority: LOW" + instance.dataset.created;
+                instance.dataset.priority = "2";
             } else if (pr.priority === "lowest") {
                 priorityIcon.classList.add("fa-solid", "fa-angles-down", "w3-text-blue");
                 priorityIcon.title = "Priority: LOWEST";
-                instance.dataset.priority = "0";
+                instance.dataset.priority = "1" + instance.dataset.created;
             }
 
             // Remove the existing instance with the same ID
