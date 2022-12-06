@@ -522,11 +522,11 @@ const GhContext = {
     checkNoMatchingPullRequets: async function (openedPullRequestIds, noMatchingPullRequests) {
         // Extra check for no matching Pull requests with onBehalfInfo
         let extraPrFound = false
-        let i = 0;
-        let prToCheck = noMatchingPullRequests.filter(p => !this.pull_requests_no_matching.some(i => i === p.id)) // Remove already checked PR
+        let j = 0;
+        let prToCheck = noMatchingPullRequests.filter(p => !this.pull_requests_no_matching.includes(p.pull_request.id)) // Remove already checked PR
         for (let inm of prToCheck) {
-            i = i + 1
-            await dispatchStatusMessage(`Extra checks: [${i} of ${prToCheck.length}]`)
+            j = j + 1
+            await dispatchStatusMessage(`Extra checks: [${j} of ${prToCheck.length}]`)
 
             let previous = this.pull_requests.find(o => o.id === inm.pull_request.id);
             let fullPullRequestInfo = await GhClient.getPullRequestInfo(this.gh_token, inm.repo, inm.pull_request);
