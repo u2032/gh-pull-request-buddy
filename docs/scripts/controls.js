@@ -332,8 +332,8 @@ window.document.addEventListener("gh_pull_requests",
                 instance.dataset.priority = "3" + instance.dataset.created;
             } else if (pr.priority === "low") {
                 priorityIcon.classList.add("fa-solid", "fa-angle-down", "w3-text-blue");
-                priorityIcon.title = "Priority: LOW" + instance.dataset.created;
-                instance.dataset.priority = "2";
+                priorityIcon.title = "Priority: LOW";
+                instance.dataset.priority = "2" + instance.dataset.created;
             } else if (pr.priority === "lowest") {
                 priorityIcon.classList.add("fa-solid", "fa-angles-down", "w3-text-blue");
                 priorityIcon.title = "Priority: LOWEST";
