@@ -208,9 +208,10 @@ const GhClient = {
             }
             if ((review.state === "PENDING" || review.state === "REQUESTED") && (previousReview.state === "APPROVED" || previousReview.state === "CHANGES_REQUESTED")) {
                 // If the last review is still in pending or requested, keep the last in approved or changes_requested status instead
-                reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
-                reviews.push(review);
+                review = previousReview
             }
+            reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
+            reviews.push(review);
         }
 
         // Add request assignees
