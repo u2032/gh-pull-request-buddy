@@ -258,7 +258,7 @@ const GhClient = {
 const GhContext = {
 
     /* Serialization version, useful to invalidate stored data if the format has changed */
-    version: "2022_12_02",
+    version: "2022_12_06",
 
     lastCheck: null,
     running: false,
@@ -322,12 +322,12 @@ const GhContext = {
         return this.filters[_type + "-" + _value];
     },
 
-    markAsIgnored: function (_prId) {
-        this.pull_requests_ignored.push(_prId)
+    markAsIgnored: function (_pr) {
+        this.pull_requests_ignored.push(this.pullRequestToKey(_pr))
     },
 
-    isIgnored: function (_prId) {
-        return this.pull_requests_ignored.includes(_prId)
+    isIgnored: function (_pr) {
+        return this.pull_requests_ignored.includes(this.pullRequestToKey(_pr))
     },
 
     connect: async function (_token) {
@@ -358,13 +358,13 @@ const GhContext = {
         try {
             this.running = true;
 
-            let {openedPullRequestIds, noMatchingPullRequests} = await GhContext.checkPullRequests();
+            let {openedPullRequests, noMatchingPullRequests} = await GhContext.checkPullRequests();
             await GhContext.storeInLocalStorage();
 
-            await GhContext.checkNoMatchingPullRequets(openedPullRequestIds, noMatchingPullRequests)
+            await GhContext.checkNoMatchingPullRequets(openedPullRequests, noMatchingPullRequests)
             await GhContext.storeInLocalStorage();
 
-            await GhContext.cleanUpIgnoreList(openedPullRequestIds)
+            await GhContext.cleanUpIgnoreList(openedPullRequests)
             await GhContext.storeInLocalStorage();
 
         } finally {
@@ -460,17 +460,17 @@ const GhContext = {
         const repoToCheck = result.repoToCheck;
 
         const pullRequests = []
-        const openedPullRequestIds = []
+        const openedPullRequests = []
         const noMatchingPullRequests = []
         let i = 0;
         for (let irepo of repoToCheck) {
             i = i + 1;
             await dispatchStatusMessage(`Checking repository: ${irepo.fullname} [${i} of ${repoToCheck.length}]`);
 
-            const openedPullRequests = await GhClient.getPullRequestInfos(this.gh_token, irepo);
+            const openedPullRequestsInRepo = await GhClient.getPullRequestInfos(this.gh_token, irepo);
 
-            for (let ipr of openedPullRequests) {
-                openedPullRequestIds.push(ipr.id)
+            for (let ipr of openedPullRequestsInRepo) {
+                openedPullRequests.push(ipr)
 
                 let previous = this.pull_requests.find(o => o.id === ipr.id);
                 let matching = this.computeMatchingType(ipr, previous);
@@ -516,23 +516,26 @@ const GhContext = {
             }
         }))
 
-        return {openedPullRequestIds: openedPullRequestIds, noMatchingPullRequests: noMatchingPullRequests}
+        return {openedPullRequests: openedPullRequests, noMatchingPullRequests: noMatchingPullRequests}
     },
 
-    checkNoMatchingPullRequets: async function (openedPullRequestIds, noMatchingPullRequests) {
+    checkNoMatchingPullRequets: async function (openedPullRequests, noMatchingPullRequests) {
         // Extra check for no matching Pull requests with onBehalfInfo
         let extraPrFound = false
         let j = 0;
-        let prToCheck = noMatchingPullRequests.filter(p => !this.pull_requests_no_matching.includes(p.pull_request.id)) // Remove already checked PR
+        let prToCheck = noMatchingPullRequests.filter(p => !this.pull_requests_no_matching.includes(this.pullRequestToKey(p.pull_request))) // Remove already checked PR
         for (let inm of prToCheck) {
             j = j + 1
+            if (j % 50 === 0) {
+                await GhContext.storeInLocalStorage(); // Store in local storage every 50 checks
+            }
             await dispatchStatusMessage(`Extra checks: [${j} of ${prToCheck.length}]`)
-
+            
             let previous = this.pull_requests.find(o => o.id === inm.pull_request.id);
             let fullPullRequestInfo = await GhClient.getPullRequestInfo(this.gh_token, inm.repo, inm.pull_request);
             let matching = this.computeMatchingType(fullPullRequestInfo, previous)
             if (matching === null) {
-                this.pull_requests_no_matching.push(inm.pull_request.id)
+                this.pull_requests_no_matching.push(this.pullRequestToKey(inm.pull_request))
             } else {
                 console.debug(`Selecting PR from onBehalf: ${inm.repo.fullname} / ${fullPullRequestInfo.title}`)
                 this.sortReviewOnPullRequest(fullPullRequestInfo);
@@ -554,15 +557,28 @@ const GhContext = {
         }
 
         // Cleanup no_matching by removing the closed ones
-        this.pull_requests_no_matching = this.pull_requests_no_matching.filter(i => {
-            return openedPullRequestIds.includes(i)
+        this.pull_requests_no_matching = this.pull_requests_no_matching.filter(key => {
+            let {repoId, pullRequestId} = this.pullRequestFromKey(key)
+            return !openedPullRequests.some(k => k.repository.id === repoId) // We didn't check this repository
+                || openedPullRequests.some(k => k.id === pullRequestId) // or the PR is still opened
         });
     },
 
-    cleanUpIgnoreList: function (openedPullRequestIds) {
-        this.pull_requests_ignored = this.pull_requests_ignored.filter(i => {
-            return openedPullRequestIds.includes(i)
+    cleanUpIgnoreList: function (openedPullRequests) {
+        this.pull_requests_ignored = this.pull_requests_ignored.filter(key => {
+            let {repoId, pullRequestId} = this.pullRequestFromKey(key)
+            return !openedPullRequests.some(k => k.repository.id === repoId) // We didn't check this repository
+                || openedPullRequests.some(k => k.id === pullRequestId) // or the PR is still opened
         });
+    },
+
+    pullRequestToKey: function (pr) {
+        return `${pr.repository.id}::${pr.id}`
+    },
+
+    pullRequestFromKey: function (key) {
+        let info = key.split("::");
+        return {repoId: info[0], pullRequestId: info[1]}
     },
 
     computePriority: function (ipr) {
@@ -728,6 +744,20 @@ const GhContext = {
             console.error("Failed to reload from storage: " + _e);
             localStorage.clear();
         }
+    },
+
+    computeStorageSize: function () {
+        let _lsTotal = 0,
+            _xLen, _x;
+        for (_x in localStorage) {
+            if (!localStorage.hasOwnProperty(_x)) {
+                continue;
+            }
+            _xLen = ((localStorage[_x].length + _x.length) * 2);
+            _lsTotal += _xLen;
+            console.log(_x.substr(0, 50) + " = " + (_xLen / 1024).toFixed(2) + " KB")
+        }
+        console.log("Total = " + (_lsTotal / 1024).toFixed(2) + " KB");
     }
 }
 

@@ -208,7 +208,7 @@ window.document.addEventListener("gh_pull_requests",
         const lastCheck = e.detail.last_check
         const pullRequests = e.detail.pull_requests
         for (let pr of pullRequests) {
-            if (GhContext.isIgnored(pr.id)) {
+            if (GhContext.isIgnored(pr)) {
                 continue  // Skip ignored PR
             }
 
@@ -243,7 +243,7 @@ window.document.addEventListener("gh_pull_requests",
 
             const actionIgnoreConfirm = instance.querySelector(".action-ignore-confirm")
             actionIgnoreConfirm.addEventListener("click", function () {
-                GhContext.markAsIgnored(pr.id)
+                GhContext.markAsIgnored(pr)
                 instance.classList.add("w3-hide")
                 GhContext.storeInLocalStorage()
             });
