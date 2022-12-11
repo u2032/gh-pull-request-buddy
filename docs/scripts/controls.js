@@ -241,6 +241,7 @@ window.document.addEventListener("gh_pull_requests",
                 window.open(pr.url, '_blank');
             });
 
+            const actionIgnore = instance.querySelector(".action-ignore")
             const actionIgnoreConfirm = instance.querySelector(".action-ignore-confirm")
             actionIgnoreConfirm.addEventListener("click", function () {
                 GhContext.markAsIgnored(pr)
@@ -283,6 +284,9 @@ window.document.addEventListener("gh_pull_requests",
 
             const prReviewList = instance.querySelector(".pull-request-review-list");
             const prReviewTemplate = prReviewList.querySelector(".pull-request-review-template");
+            let approvedByUser = false
+            let approvedBySomeone = false
+            let rejectedBySomeone = false
             for (let review of pr.reviews) {
                 const prReviewInstance = prReviewTemplate.cloneNode(true);
                 prReviewInstance.classList.replace("w3-hide", "w3-show-inline-block");
@@ -296,8 +300,13 @@ window.document.addEventListener("gh_pull_requests",
                 const prReviewIcon = prReviewInstance.querySelector(".pull-request-review-icon");
                 prReviewIcon.title = review.state;
                 if (review.state === "APPROVED") {
+                    approvedBySomeone = true
+                    if (review.id === GhContext.user.id) {
+                        approvedByUser = true
+                    }
                     prReviewIcon.classList.add("fa-solid", "fa-circle-check", "w3-text-green", "w3-large");
                 } else if (review.state === "CHANGES_REQUESTED") {
+                    rejectedBySomeone = true
                     prReviewIcon.classList.add("fa-solid", "fa-circle-xmark", "w3-text-red", "w3-large");
                 } else if (review.state === "PENDING") {
                     prReviewIcon.classList.add("fa-solid", "fa-hourglass-half", "w3-text-gray");
@@ -314,6 +323,18 @@ window.document.addEventListener("gh_pull_requests",
                 }
 
                 prReviewList.appendChild(prReviewInstance)
+            }
+
+            if (approvedByUser) {
+                instance.classList.add("pr-approved")
+            }
+
+            if (approvedBySomeone && !rejectedBySomeone) {
+                instance.classList.add("w3-pale-green")
+                actionIgnore.classList.replace("w3-white", "w3-pale-green")
+            } else if (rejectedBySomeone) {
+                instance.classList.add("w3-pale-red")
+                actionIgnore.classList.replace("w3-white", "w3-pale-red")
             }
 
             const matchingIcon = instance.querySelector(`div[data-matching=${matching}]`);
