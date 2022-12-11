@@ -296,9 +296,9 @@ window.document.addEventListener("gh_pull_requests",
                 const prReviewIcon = prReviewInstance.querySelector(".pull-request-review-icon");
                 prReviewIcon.title = review.state;
                 if (review.state === "APPROVED") {
-                    prReviewIcon.classList.add("fa-solid", "fa-circle-check", "w3-text-green");
+                    prReviewIcon.classList.add("fa-solid", "fa-circle-check", "w3-text-green", "w3-large");
                 } else if (review.state === "CHANGES_REQUESTED") {
-                    prReviewIcon.classList.add("fa-solid", "fa-square-xmark", "w3-text-red");
+                    prReviewIcon.classList.add("fa-solid", "fa-circle-xmark", "w3-text-red", "w3-large");
                 } else if (review.state === "PENDING") {
                     prReviewIcon.classList.add("fa-solid", "fa-hourglass-half", "w3-text-gray");
                     prReviewName.classList.add("w3-text-gray");

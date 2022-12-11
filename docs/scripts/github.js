@@ -358,10 +358,10 @@ const GhContext = {
         try {
             this.running = true;
 
-            let {openedPullRequests, noMatchingPullRequests} = await GhContext.checkPullRequests();
+            let {openedPullRequests, pullRequestsToCheck} = await GhContext.checkPullRequests();
             await GhContext.storeInLocalStorage();
 
-            await GhContext.checkNoMatchingPullRequets(openedPullRequests, noMatchingPullRequests)
+            await GhContext.checkFullPullRequestInfos(openedPullRequests, pullRequestsToCheck)
             await GhContext.storeInLocalStorage();
 
             await GhContext.cleanUpIgnoreList(openedPullRequests)
@@ -461,7 +461,7 @@ const GhContext = {
 
         const pullRequests = []
         const openedPullRequests = []
-        const noMatchingPullRequests = []
+        const pullRequestsToCheck = []
         let i = 0;
         for (let irepo of repoToCheck) {
             i = i + 1;
@@ -480,10 +480,13 @@ const GhContext = {
                     matching = previous.matching;
                 }
 
-                if (matching === null) {
-                    // No matching found, ignore this PR
-                    noMatchingPullRequests.push({repo: irepo, pull_request: ipr})
+                if (matching === null) { // No matching found, ignore this PR but plan it for a full check
+                    pullRequestsToCheck.push({repo: irepo, pull_request: ipr})
                     continue;
+                }
+
+                if (previous === undefined) { // First time we detect this PR, keep the PR but plan it for a full check
+                    pullRequestsToCheck.push({repo: irepo, pull_request: ipr})
                 }
 
                 if (previous !== undefined) {
@@ -516,24 +519,23 @@ const GhContext = {
             }
         }))
 
-        return {openedPullRequests: openedPullRequests, noMatchingPullRequests: noMatchingPullRequests}
+        return {openedPullRequests: openedPullRequests, pullRequestsToCheck: pullRequestsToCheck}
     },
 
-    checkNoMatchingPullRequets: async function (openedPullRequests, noMatchingPullRequests) {
+    checkFullPullRequestInfos: async function (openedPullRequests, pullRequestsToCheck) {
         // Extra check for no matching Pull requests with onBehalfInfo
         let extraPrFound = false
         let j = 0;
-        let prToCheck = noMatchingPullRequests.filter(p => !this.pull_requests_no_matching.includes(this.pullRequestToKey(p.pull_request))) // Remove already checked PR
+        let prToCheck = pullRequestsToCheck.filter(p => !this.pull_requests_no_matching.includes(this.pullRequestToKey(p.pull_request))) // Remove already checked PR
         for (let inm of prToCheck) {
             j = j + 1
             if (j % 50 === 0) {
                 await GhContext.storeInLocalStorage(); // Store in local storage every 50 checks
             }
             await dispatchStatusMessage(`Extra checks: [${j} of ${prToCheck.length}]`)
-            
-            let previous = this.pull_requests.find(o => o.id === inm.pull_request.id);
+
             let fullPullRequestInfo = await GhClient.getPullRequestInfo(this.gh_token, inm.repo, inm.pull_request);
-            let matching = this.computeMatchingType(fullPullRequestInfo, previous)
+            let matching = this.computeMatchingType(fullPullRequestInfo, undefined)
             if (matching === null) {
                 this.pull_requests_no_matching.push(this.pullRequestToKey(inm.pull_request))
             } else {
@@ -541,6 +543,7 @@ const GhContext = {
                 this.sortReviewOnPullRequest(fullPullRequestInfo);
                 fullPullRequestInfo.matching = matching
                 fullPullRequestInfo.priority = this.computePriority(fullPullRequestInfo)
+                this.pull_requests = this.pull_requests.filter(p => p.id !== fullPullRequestInfo.id) // Remove the existing one if needed
                 this.pull_requests.push(fullPullRequestInfo)
                 extraPrFound = true
             }

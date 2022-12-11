@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 
 <head>
     <title>Pull Requests Buddy</title>
@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="./styles/solid.min.css" integrity="sha384-XA4GNh8NX8EYkM7X7NCXQzS7tTEzSelPJ2gF6s+KKgR7Fcep3WAa9iKAxyYEQBqh">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
 
-    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-+6j3wzUZRmgxPHoTX1+VwNC+oERF10QSrPdxY8CAUqH4Z9TDuUKpkF6+n5Yhqzbw" defer></script>
-    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-8Gcqjm17IYgMkzvq4AM1q7bV/hqxP3ZNmWZl3I4oaypxYswo3djoWFLpFxfJnaxh" defer></script>
+    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-GXJQPZGIDFDgh5yWK0muhm64xnYEU6r+q6Gd3YEgtFbVBqTDKtPly+tEtuB8Y3IB" defer></script>
+    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-PoWDuOM5gFnU3+zZBQA8tAqUOO5Pw5bwZceMWUjxWzHLXbGXam9/mjh0PCFsMxzn" defer></script>
     <!-- @formatter:on -->
 
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
@@ -65,12 +65,13 @@
                     If you have none, you can generate a new <strong>Classic GitHub Token</strong> from [<a
                         href="https://github.com/settings/tokens" target="_blank">your account's settings</a>].
                 </p>
-                <p>Please make sure that your token has the following rights:
+                <p>
+                    Please make sure that your token has the following rights:
+                </p>
                 <ul>
                     <li><strong>repo:*</strong> to be able to read private repositories</li>
                     <li><strong>read:org</strong> to be able to read your user's organization data</li>
                 </ul>
-                </p>
                 <p>
                     This token stays client's side in your browser and is not sent to a server. Actually, the whole
                     content of this page and dashboard is generated client's side and doesn't make any call to a service
@@ -79,7 +80,7 @@
             </div>
             <form id="connection-form" class="w3-section">
                 <label class="w3-margin w3-large">Enter your Github Token:</label>
-                <input id="gh-token" type="password" class="w3-input w3-border w3-pale-yellow" required="true"/>
+                <input id="gh-token" type="password" class="w3-input w3-border w3-pale-yellow" required="required"/>
                 <button class="w3-btn w3-blue w3-margin w3-right w3-border">
                     CONNECT
                 </button>
@@ -148,7 +149,8 @@
                 <i class="fa-solid fa-arrow-down-wide-short"></i>
                 Sorted by:
                 <div class="w3-show-inline-block w3-dropdown-hover">
-                    <span class="sorting-option" data-sortby="created">Creation Date</span><span class="sorting-option" data-sortby="priority">Priority</span>
+                    <span class="sorting-option" data-sortby="created">Creation Date</span><span class="sorting-option"
+                                                                                                 data-sortby="priority">Priority</span>
                     <div class="w3-dropdown-content w3-card-4 w3-padding-small">
                         <div class="w3-hover-light-blue pointable" data-sortby="created">
                             <i class="fa-solid fa-calendar-days"></i>&nbsp;Creation Date
