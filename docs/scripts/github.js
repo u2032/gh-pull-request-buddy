@@ -149,19 +149,6 @@ const GhClient = {
         }
 
         let reviews = []
-        // Add request reviews
-        for (let ireview of ipr.reviewRequests.nodes) {
-            let review = {
-                id: ireview.requestedReviewer.id,
-                login: ireview.requestedReviewer.login,
-                name: ireview.requestedReviewer.name,
-                avatarUrl: ireview.requestedReviewer.avatarUrl,
-                state: ireview.requestedReviewer.login !== undefined ? "REQUESTED" : "TEAM"
-            }
-            reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
-            reviews.push(review);
-        }
-
         // Add made review on behalf of
         for (let ireview of ipr.reviews.nodes) {
             if (ireview.onBehalfOf === undefined) {
@@ -176,6 +163,19 @@ const GhClient = {
                 reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
                 reviews.push(review);
             }
+        }
+
+        // Add request reviews
+        for (let ireview of ipr.reviewRequests.nodes) {
+            let review = {
+                id: ireview.requestedReviewer.id,
+                login: ireview.requestedReviewer.login,
+                name: ireview.requestedReviewer.name,
+                avatarUrl: ireview.requestedReviewer.avatarUrl,
+                state: ireview.requestedReviewer.login !== undefined ? "REQUESTED" : "TEAM"
+            }
+            reviews = reviews.filter(r => r.id !== review.id) // Remove the previous reviews from this user
+            reviews.push(review);
         }
 
         // Add made reviews
@@ -609,38 +609,40 @@ const GhContext = {
     },
 
     computeMatchingType: function (ipr, previous) {
-        let matching = null;
-
-        if (previous !== undefined && previous.matching === "team") {
-            // If this PR previously matched by TEAM, keep that value
-            matching = previous.matching;
-        } else {
-            for (let ireview of ipr.reviews) {
-                // Check if a review request is pending for a team of the user
-                if (ireview.state === "TEAM") {
-                    if (this.team_ids.includes(ireview.id)) {
-                        matching = "team";
-                    }
-                }
-                // Check if a review request is pending for the user
-                if (ireview.id === this.user.id) {
-                    matching = "direct";
-                }
-            }
+        // Check if the user is the author of the review
+        if (ipr.author.id === this.user.id) {
+            return "direct";
         }
 
         // Check assignee
         for (let iassignee of ipr.assignees) {
             if (iassignee.id === this.user.id) {
-                matching = "direct";
+                return "direct";
             }
         }
 
-        // Check if the user is the author of the review
-        if (ipr.author.id === this.user.id) {
-            matching = "direct";
+        if (previous !== undefined && previous.matching === "team") {
+            // If this PR previously matched by TEAM, keep that value
+            return "team";
+        } else {
+            // Check if a review is related to the user
+            for (let ireview of ipr.reviews) {
+                if (ireview.id === this.user.id) {
+                    return "direct";
+                }
+            }
+
+            // Check if a review request is related to a team of the user
+            for (let ireview of ipr.reviews) {
+                if (ireview.state === "TEAM") {
+                    if (this.team_ids.includes(ireview.id)) {
+                        return "team";
+                    }
+                }
+            }
         }
-        return matching;
+
+        return null;
     },
 
     sortReviewOnPullRequest: function (ipr) {
