@@ -38,7 +38,7 @@ Content-Type: application/json
 Accept: application/vnd.github+json
 X-Github-Next-Global-ID: 1
 
-{"query": "{ rateLimit { cost } viewer { repositories(first: 100, after: null, affiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR], ownerAffiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) { totalCount pageInfo { hasNextPage endCursor } nodes { id name pushedAt owner { id login avatarUrl } pullRequests(first: 100, states: OPEN) { nodes { id } } } } } }"}
+{"query": "{ rateLimit { cost } viewer { repositories(first: 100, after: null, affiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR], ownerAffiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) { totalCount pageInfo { hasNextPage endCursor } nodes { id name pushedAt repositoryTopics(first:10) { nodes { topic { name } } } owner { id login avatarUrl } pullRequests(first: 100, states: OPEN) { nodes { id } } } } } }"}
 
 
 ### get pull requests info -- cost 4

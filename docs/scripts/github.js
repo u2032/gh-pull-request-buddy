@@ -88,7 +88,7 @@ const GhClient = {
         const repositories = [];
         do {
             console.debug(`Fetching ${repositories.length} +100 repositories...`)
-            response = await this.request(_token, `{ rateLimit { remaining resetAt } viewer { repositories(first: 100, after: ${cursor === null ? cursor : `\"${cursor}\"`}, affiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR], ownerAffiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) { totalCount pageInfo { hasNextPage endCursor } nodes { id name nameWithOwner pushedAt isArchived isDisabled owner { id login avatarUrl } pullRequests(last: 1, states: OPEN) { nodes { id createdAt updatedAt } } } } } }`)
+            response = await this.request(_token, `{ rateLimit { remaining resetAt } viewer { repositories(first: 100, after: ${cursor === null ? cursor : `\"${cursor}\"`}, affiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR], ownerAffiliations:[OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) { totalCount pageInfo { hasNextPage endCursor } nodes { id name nameWithOwner pushedAt isArchived isDisabled repositoryTopics(first:10) { nodes { topic { name } } } owner { id login avatarUrl } pullRequests(last: 1, states: OPEN) { nodes { id createdAt updatedAt } } } } } }`)
             cursor = response.viewer.repositories.pageInfo.endCursor
             for (let iorg of response.viewer.repositories.nodes) {
                 if (iorg.isDisabled || iorg.isArchived) {
@@ -104,12 +104,17 @@ const GhClient = {
                         pushedAt = iorg.pullRequests.nodes[0].updatedAt;
                     }
                 }
+                let topics = []
+                for (let itopic of iorg.repositoryTopics.nodes) {
+                    topics.push(itopic.topic.name)
+                }
                 let repository = {
                     id: iorg.id,
                     name: iorg.name,
                     fullname: iorg.nameWithOwner,
                     updatedAt: pushedAt,
                     hasPullRequests: iorg.pullRequests.nodes.length > 0,
+                    topics: topics,
                     owner: {id: iorg.owner.id, login: iorg.owner.login, avatarUrl: iorg.owner.avatarUrl}
                 }
                 repositories.push(repository)
