@@ -27,7 +27,7 @@ const GhClient = {
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github+json',
                     'Authorization': 'Bearer ' + _token,
-                    // 'X-Github-Next-Global-ID': 1 // TODO Set 1 when the CORS Policy is fixed on github side, for now this header is blocked
+                    'X-Github-Next-Global-ID': 1
                 },
                 redirect: 'follow',
                 body: JSON.stringify({query: _query})
@@ -147,10 +147,10 @@ const GhClient = {
 
     extractPullRequestInfo: function (_repository, ipr) {
         let author = {
-            id: ipr.author.id,
-            login: ipr.author.login,
-            name: ipr.author.name,
-            avatarUrl: ipr.author.avatarUrl
+            id: ipr.author ? ipr.author.id : 0,
+            login: ipr.author ? ipr.author.login : "ghost",
+            name: ipr.author ? ipr.author.name : "ghost",
+            avatarUrl: ipr.author ? ipr.author.avatarUrl : "https://avatars.githubusercontent.com/u/10137?s=96&v=4"
         }
 
         let reviews = []
@@ -200,10 +200,10 @@ const GhClient = {
             }
 
             let review = {
-                id: ireview.author.id,
-                login: ireview.author.login,
-                name: ireview.author.name,
-                avatarUrl: ireview.author.avatarUrl,
+                id: ireview.author ? ireview.author.id : 0,
+                login: ireview.author ? ireview.author.login : "ghost",
+                name: ireview.author ? ireview.author.name : "ghost",
+                avatarUrl: ireview.author ? ireview.author.avatarUrl : "https://avatars.githubusercontent.com/u/10137?s=96&v=4",
                 state: status
             }
             let previousReview = reviews.find(r => r.id === review.id);
@@ -223,10 +223,10 @@ const GhClient = {
         let assignees = []
         for (let iassignee of ipr.assignees.nodes) {
             let assignee = {
-                id: iassignee.id,
-                login: iassignee.login,
-                name: iassignee.name,
-                avatarUrl: iassignee.avatarUrl
+                id: iassignee ? iassignee.id : 0,
+                login: iassignee ? iassignee.login : "ghost",
+                name: iassignee ? iassignee.name : "ghost",
+                avatarUrl: iassignee ? iassignee.avatarUrl : "https://avatars.githubusercontent.com/u/10137?s=96&v=4"
             }
             assignees.push(assignee);
         }
