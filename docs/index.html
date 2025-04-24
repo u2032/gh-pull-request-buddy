@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="./styles/solid.min.css" integrity="sha384-XA4GNh8NX8EYkM7X7NCXQzS7tTEzSelPJ2gF6s+KKgR7Fcep3WAa9iKAxyYEQBqh">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
 
-    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-4ShxfeqGs0xO4C2vej+gz2N+GV3uOjc7VxmjCaEkCVbTOACShmTTUjerjBnt0m3B" defer></script>
-    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-4ShxfeqGs0xO4C2vej+gz2N+GV3uOjc7VxmjCaEkCVbTOACShmTTUjerjBnt0m3B" defer></script>
+    <script type="text/javascript" src="./scripts/controls.js" integrity="sha384-BPcZwHiBpv2ZXZZEpOexJYM0kx4Iv+g/+Yck1ZROJne6Hbx1zs+wD+XsRecXMZK7" defer></script>
+    <script type="text/javascript" src="./scripts/github.js" integrity="sha384-DQDv+dnmif9aFcjRE25Ghj9Hc/wuGP+TGWZg37UuDZP0jDR7JqbzePBTOCju+wE5" defer></script>
     <!-- @formatter:on -->
 
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
@@ -138,19 +138,25 @@
             </div>
         </div>
 
-        <div id="no-pull-request" class="w3-display-container w3-center w3-hide w3-section w3-margin-top">
-            <div class="w3-display-middle">
-                <h1>... No Pull Request found ...</h1>
+        <div class="w3-padding-32">
+            <div id="display-option" class="w3-small w3-text-gray w3-hide w3-right">
+                <i class="fa-solid fa-filter"></i>
+                <div class="w3-show-inline-block w3-dropdown-hover">
+                    Display options
+                    <div class="w3-dropdown-content w3-card-4 w3-padding-small">
+                        <div class="w3-hover-light-blue pointable" id="display-hide-approved">
+                            <i class="display-option-icon-enabled fa-solid fa-square-xmark w3-hide"></i><i class="display-option-icon-disabled fa-solid fa-square"></i> Hide approved
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div class="w3-padding-top-32">
             <div id="sorting-option" class="w3-small w3-text-gray w3-hide">
                 <i class="fa-solid fa-arrow-down-wide-short"></i>
                 Sorted by:
                 <div class="w3-show-inline-block w3-dropdown-hover">
-                    <span class="sorting-option" data-sortby="created">Creation Date</span><span class="sorting-option"
-                                                                                                 data-sortby="priority">Priority</span>
+                    <span class="sorting-option" data-sortby="created">Creation Date</span>
+                    <span class="sorting-option" data-sortby="priority">Priority</span>
+
                     <div class="w3-dropdown-content w3-card-4 w3-padding-small">
                         <div class="w3-hover-light-blue pointable" data-sortby="created">
                             <i class="fa-solid fa-calendar-days"></i>&nbsp;Creation Date
@@ -161,6 +167,15 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div id="no-pull-request" class="w3-display-container w3-center w3-hide w3-section w3-margin-top">
+            <div class="w3-display-middle">
+                <h1>... No Pull Request found ...</h1>
+            </div>
+        </div>
+
+        <div class="">
             <div id="pull-request-template"
                  class="w3-card-4 w3-padding w3-white w3-section w3-round-small w3-hide">
                 <div class="w3-row flex">

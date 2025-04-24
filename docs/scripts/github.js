@@ -303,6 +303,9 @@ const GhContext = {
     /* Preferred sort option */
     sortBy: "created",
 
+    /* Display option: hide approved PR */
+    displayHideApproved: "disabled",
+
     /* Offset used for the onbehalf feature which is costly */
     onBehalfOffset: 0,
 
@@ -689,6 +692,7 @@ const GhContext = {
         localStorage.setItem('gh_context_pull_requests_ignored', JSON.stringify(this.pull_requests_ignored));
         localStorage.setItem('gh_context_filters', JSON.stringify(fromAssociative(this.filters)));
         localStorage.setItem('gh_context_sort_by', this.sortBy);
+        localStorage.setItem('gh_context_display_hide_approved', this.displayHideApproved);
     },
 
     reloadFromLocalStorage: async function () {
@@ -723,6 +727,7 @@ const GhContext = {
             let filters = JSON.parse(localStorage.getItem('gh_context_filters') ?? "{}");
             this.filters = toAssociative(Object.keys(filters), Object.values(filters));
             this.sortBy = localStorage.getItem('gh_context_sort_by') ?? "created";
+            this.displayHideApproved = localStorage.getItem('gh_context_display_hide_approved') ?? "disabled";
 
             // Retrigger events to update the view
             window.document.dispatchEvent(new CustomEvent('gh_organizations', {

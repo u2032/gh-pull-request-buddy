@@ -21,6 +21,9 @@ function init() {
         sort.addEventListener('click', onClickSort);
     }
 
+    const displayHideApproved = document.getElementById("display-hide-approved");
+    displayHideApproved.addEventListener('click', onClickDisplayHideApproved)
+
     const actionLogout = document.getElementById("action-logout")
     actionLogout.addEventListener('click', function (e) {
         document.location.reload()
@@ -66,6 +69,17 @@ function onClickSort(e) {
     GhContext.storeInLocalStorage()
 
     applySorting()
+}
+
+function onClickDisplayHideApproved(e) {
+    // Save new option
+    if (GhContext.displayHideApproved === "enabled") {
+        GhContext.displayHideApproved = "disabled";
+    } else {
+        GhContext.displayHideApproved = "enabled";
+    }
+    GhContext.storeInLocalStorage()
+    applyDisplayHideApproved()
 }
 
 /* VIEW MANAGEMENT */
@@ -120,6 +134,14 @@ function applyFilters() {
             mustBeDisplayed = false;
         }
 
+        if (GhContext.displayHideApproved === "enabled") {
+            // Hide if approved
+            let isApproved = el.classList.contains("w3-pale-green")
+            if (isApproved) {
+                mustBeDisplayed = false;
+            }
+        }
+
         if (mustBeDisplayed) {
             el.classList.remove("w3-hide");
         } else {
@@ -154,6 +176,22 @@ function applySorting() {
     });
 }
 
+function applyDisplayHideApproved() {
+    const parent = document.getElementById("display-hide-approved");
+    const option = GhContext.displayHideApproved;
+
+    let optEnabledIcon = parent.querySelector(".display-option-icon-enabled");
+    let optDisabledIcon = parent.querySelector(".display-option-icon-disabled");
+    if (option === "enabled") {
+        optEnabledIcon.classList.remove("w3-hide")
+        optDisabledIcon.classList.add("w3-hide")
+    } else {
+        optEnabledIcon.classList.add("w3-hide")
+        optDisabledIcon.classList.remove("w3-hide")
+    }
+    applyFilters()
+}
+
 function isOrganizationActive(_value) {
     return GhContext.isFilterActive("organization", _value);
 }
@@ -171,6 +209,7 @@ function checkNoPullRequest() {
     const noPr = document.getElementById("no-pull-request");
     const visibleElements = document.querySelectorAll("div.pull-request-instance:not(.w3-hide)");
     const sortingOption = document.getElementById("sorting-option");
+    const displayOption = document.getElementById("display-option");
     if (visibleElements.length > 0) {
         noPr.classList.add("w3-hide");
         sortingOption.classList.remove("w3-hide")
@@ -178,6 +217,7 @@ function checkNoPullRequest() {
         noPr.classList.remove("w3-hide");
         sortingOption.classList.add("w3-hide")
     }
+    displayOption.classList.remove("w3-hide")
 }
 
 
@@ -373,6 +413,9 @@ window.document.addEventListener("gh_pull_requests",
 
         // Reapply Sorting
         this.applySorting();
+
+        // Reapply Display options
+        this.applyDisplayHideApproved()
 
         // Reapply filters
         this.applyFilters();
